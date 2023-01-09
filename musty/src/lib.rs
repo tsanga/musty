@@ -1,14 +1,20 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+mod id;
+mod model;
+mod cursor;
+mod error;
+mod backend;
+mod db;
+
+pub use id::Id;
+pub use model::Model;
+
+use musty_macro::Model as MustyModel;
+pub mod prelude {
+    // TODO
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+#[derive(MustyModel)]
+struct User {
+    id: Id<Self>,
 }

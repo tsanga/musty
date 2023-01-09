@@ -1,14 +1,19 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use darling::FromDeriveInput;
+use derive::MetaModelDerive;
+use proc_macro::{self, TokenStream};
+use syn::{DeriveInput, parse_macro_input};  
+use proc_macro_error::{
+    proc_macro_error
+};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod derive;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+#[proc_macro_derive(Model, attributes(model))]
+#[proc_macro_error]
+pub fn derive_model(stream: TokenStream) -> TokenStream {
+    let meta_model = match MetaModelDerive::from_derive_input(&parse_macro_input!(stream as DeriveInput)) {
+        Ok(m) => m,
+        Err(e) => return TokenStream::from(e.write_errors()),
+    };
+    meta_model.expand()
 }
