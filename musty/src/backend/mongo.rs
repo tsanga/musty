@@ -6,8 +6,6 @@ use mongodb::{
     Collection, Database,
 };
 
-
-
 use crate::prelude::Id;
 use crate::{db::Db, model::Model, prelude::Identifable};
 

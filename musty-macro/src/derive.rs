@@ -1,12 +1,10 @@
-use darling::{FromDeriveInput, FromMeta, FromField};
+use darling::{FromDeriveInput, FromField, FromMeta};
 
+use crate::util::string::{ToPlural, ToTableCase};
 use proc_macro2::Span;
-use quote::{quote};
-use syn::{Ident, TypePath, Type, Path};
-use proc_macro_error::{
-    abort
-};
-use crate::util::string::{ToTableCase, ToPlural};
+use proc_macro_error::abort;
+use quote::quote;
+use syn::{Ident, Path, Type, TypePath};
 
 /*
 
@@ -72,7 +70,7 @@ impl MetaModelDerive {
 
         let fields = match data {
             darling::ast::Data::Struct(fields) => fields,
-            _ => abort!(ident.span(), "Model must be a struct")
+            _ => abort!(ident.span(), "Model must be a struct"),
         };
 
         let id_field = fields
@@ -85,18 +83,19 @@ impl MetaModelDerive {
 
         let path = match &id_field.unwrap().ty {
             Type::Path(TypePath { path, .. }) => path,
-            _ => { abort!(ident.span(), "{} `id` field must be an Id", ident) },
+            _ => {
+                abort!(ident.span(), "{} `id` field must be an Id", ident)
+            }
         };
 
         let segment = &path.segments.iter().next().unwrap();
         let arguments = &segment.arguments;
 
-
         if let syn::PathArguments::AngleBracketed(arguments) = arguments {
             let id_type = &arguments.args.iter().last().unwrap();
 
             if arguments.args.len() == 1 {
-                return Path::from_string("musty::prelude::DefaultIdType").unwrap()
+                return Path::from_string("musty::prelude::DefaultIdType").unwrap();
             }
 
             if let syn::GenericArgument::Type(Type::Path(TypePath { path, .. })) = id_type {
@@ -107,7 +106,7 @@ impl MetaModelDerive {
             abort!(ident.span(), "{} `id` field must be an Id", ident);
         }
 
-        abort!(ident.span(), "{}{:?}", quote!{#path}, segment);
+        abort!(ident.span(), "{}{:?}", quote! {#path}, segment);
     }
 
     pub fn expand(self) -> proc_macro::TokenStream {
@@ -129,9 +128,13 @@ impl MetaModelDerive {
 
         if let Some(mongo_attrs) = self.mongo {
             let collection_name = mongo_attrs.collection.unwrap_or_else(|| {
-                ident.to_string().to_table_case().to_ascii_lowercase().to_plural()
+                ident
+                    .to_string()
+                    .to_table_case()
+                    .to_ascii_lowercase()
+                    .to_plural()
             });
-            
+
             model = quote! {
                 #model
 
@@ -146,7 +149,7 @@ impl MetaModelDerive {
                 impl musty::prelude::Identifable<#model_id_type> for musty::prelude::Id<#ident, #model_id_type> {
                     type Model = #ident;
                     type Database = mongodb::Database;
-                
+
                     async fn get(self, db: &Self::Database) -> std::result::Result<Self::Model, musty::prelude::MustyError> {
                         panic!("not implemented")
                     }
@@ -156,6 +159,7 @@ impl MetaModelDerive {
 
         quote! {
             #model
-        }.into()
+        }
+        .into()
     }
 }

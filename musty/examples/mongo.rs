@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-
 use bson::oid::ObjectId;
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;

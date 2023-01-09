@@ -1,7 +1,6 @@
 use crate::prelude::Model;
 use async_trait::async_trait;
 
-
 pub struct Db<T> {
     pub(crate) inner: T,
 }

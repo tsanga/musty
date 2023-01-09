@@ -3,7 +3,10 @@ pub(crate) mod string {
         fn to_table_case(self) -> String;
     }
 
-    impl<S> ToTableCase for S where S: Into<String> {
+    impl<S> ToTableCase for S
+    where
+        S: Into<String>,
+    {
         fn to_table_case(self) -> String {
             let str: String = self.into();
             let mut table_case = String::new();
@@ -34,7 +37,4 @@ pub(crate) mod string {
             }
         }
     }
-
-    
-    
 }
