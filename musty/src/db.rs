@@ -16,7 +16,7 @@ where
 }
 
 #[async_trait]
-pub trait Identifable<I, M, D>
+pub trait Identifiable<I, M, D>
 where
     I: ToString + Send + Sync,
     M: Model<I> + Send + Sync,

@@ -7,7 +7,7 @@ use mongodb::{
 };
 
 use crate::prelude::Id;
-use crate::{db::Db, model::Model, prelude::Identifable};
+use crate::{db::Db, model::Model, prelude::Identifiable};
 
 #[async_trait]
 pub trait MongoModel<I: ToString>
@@ -41,7 +41,7 @@ where
 }
 
 #[async_trait]
-impl<I, M> Identifable<I, M, Database> for Id<M, I>
+impl<I, M> Identifiable<I, M, Database> for Id<M, I>
 where
     I: ToString + Send + Sync,
     M: Model<I> + Send + Sync,
