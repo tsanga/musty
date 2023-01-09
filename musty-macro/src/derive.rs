@@ -144,16 +144,6 @@ impl MetaModelDerive {
                 impl musty::prelude::MongoModel<#model_id_type> for #ident where Self: Sized {
                     const COLLECTION_NAME: &'static str = #collection_name;
                 }
-
-                #[async_trait]
-                impl musty::prelude::Identifable<#model_id_type> for musty::prelude::Id<#ident, #model_id_type> {
-                    type Model = #ident;
-                    type Database = mongodb::Database;
-
-                    async fn get(self, db: &Self::Database) -> std::result::Result<Self::Model, musty::prelude::MustyError> {
-                        panic!("not implemented")
-                    }
-                }
             };
         }
 
