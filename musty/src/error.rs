@@ -3,6 +3,13 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum MustyError {
     #[cfg(feature = "mongodb")]
-    #[error("{0}")]
+    #[error(transparent)]
     Mongo(#[from] mongodb::error::Error),
+
+    #[cfg(feature = "bson")]
+    #[error(transparent)]
+    Bson(#[from] bson::oid::Error),
+
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }

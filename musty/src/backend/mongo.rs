@@ -1,10 +1,22 @@
-use mongodb::{options::{ReadConcern, WriteConcern, SelectionCriteria, CollectionOptions}, Database, Collection};
+use std::panic;
 
-use crate::{db::Db, model::Model};
+use async_trait::async_trait;
+use mongodb::{
+    error::Error,
+    error::ErrorKind,
+    options::{CollectionOptions, ReadConcern, SelectionCriteria, WriteConcern},
+    Collection, Database,
+};
 
+use bson::oid::ObjectId;
 
+use crate::prelude::Id;
+use crate::{db::Db, error::MustyError, model::Model, prelude::Identifable};
+
+#[async_trait]
 pub trait MongoModel<I: ToString>
-where Self: Model<I>
+where
+    Self: Model<I>,
 {
     const COLLECTION_NAME: &'static str;
 
@@ -22,20 +34,26 @@ where Self: Model<I>
 
     fn collection(db: &Db<Database>) -> Collection<Self> {
         db.inner.collection_with_options(
-            Self::COLLECTION_NAME, 
+            Self::COLLECTION_NAME,
             CollectionOptions::builder()
                 .selection_criteria(Self::selection_criteria())
                 .read_concern(Self::read_concern())
                 .write_concern(Self::write_concern())
-                .build()
+                .build(),
         )
     }
+}
 
-    async fn find_one<F, O>(db: &Db<Database>, filter: F, options: O) -> Result<Option<Self>>
-    where 
-        F: Into<Option<Document>,
-        O: Into<Option<FindOneOptions>,
-    {
-        Ok(Self::collection(db).find_one(filter, options).await?)
+#[async_trait]
+impl<I, M> Identifable<I, M, Database> for Id<M, I>
+where
+    I: ToString + Send + Sync,
+    M: Model<I> + Send + Sync,
+{
+    async fn get_model(
+        self,
+        db: &crate::db::Db<mongodb::Database>,
+    ) -> std::result::Result<M, crate::error::MustyError> {
+        panic!("not implemented")
     }
 }

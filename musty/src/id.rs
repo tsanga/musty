@@ -1,32 +1,39 @@
 use std::marker::PhantomData;
 
-pub struct Id<M, I: ToString = String> {
+pub type DefaultType = String;
+pub trait Generated: ToString {}
+
+#[derive(Debug)]
+pub struct Id<M, I: ToString = DefaultType> {
     inner: Option<I>,
     _marker: PhantomData<M>,
 }
 
+impl<M, I: ToString> From<I> for Id<M, I> {
+    fn from(id: I) -> Self {
+        Self {
+            inner: Some(id),
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<M, I> Id<M, I>
+where
+    I: Generated,
+{
+    pub fn none() -> Self {
+        return Self {
+            inner: None,
+            _marker: PhantomData,
+        };
+    }
+}
+
 #[cfg(feature = "bson")]
 mod bson {
-    use bson::oid::ObjectId;
-
     use super::*;
-    impl<M, I: ToString> From<ObjectId> for Id<M, I> {
-        fn from(id: ObjectId) -> Self {
-            Self {
-                inner: Some(id.to_hex()),
-                _marker: PhantomData,
-            }
-        }
-    }
+    use ::bson::oid::ObjectId;
 
-    impl<M, I: ToString> TryFrom<Id<M, I>> for ObjectId {
-        type Error = bson::oid::Error;
-        fn from(id: Id<M, I>) -> Result<Self, Self::Error> {
-            if let Some(id_str) = &id.inner {
-                ObjectId::from_str(id_str)?
-            } else {
-                Err(Self::Error::InvalidHexStringLength{ length: 0, hex: "".to_string() })
-            }
-        }
-    }
+    impl Generated for ObjectId {}
 }

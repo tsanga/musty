@@ -6,6 +6,8 @@ use proc_macro_error::{
     proc_macro_error
 };
 
+mod util;
+mod model;
 mod derive;
 
 #[proc_macro_derive(Model, attributes(model))]
@@ -16,4 +18,9 @@ pub fn derive_model(stream: TokenStream) -> TokenStream {
         Err(e) => return TokenStream::from(e.write_errors()),
     };
     meta_model.expand()
+}
+#[proc_macro_attribute]
+pub fn model(_args: TokenStream, stream: TokenStream) -> TokenStream {
+    // just return the stream unmodified
+    stream
 }

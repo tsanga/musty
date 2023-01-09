@@ -1,20 +1,20 @@
+mod backend;
+mod cursor;
+mod db;
+mod error;
 mod id;
 mod model;
-mod cursor;
-mod error;
-mod backend;
-mod db;
 
-pub use id::Id;
-pub use model::Model;
-
-use musty_macro::Model as MustyModel;
 pub mod prelude {
-    // TODO
-}
+    pub use crate::db::Db as Musty;
+    pub use crate::db::Identifable;
+    pub use crate::error::MustyError;
+    pub use crate::id::DefaultType as DefaultIdType;
+    pub use crate::id::Id;
+    pub use crate::model::Model;
+    pub use async_trait::async_trait;
+    pub use musty_macro::*;
 
-
-#[derive(MustyModel)]
-struct User {
-    id: Id<Self>,
+    #[cfg(feature = "mongodb")]
+    pub use crate::backend::MongoModel;
 }
