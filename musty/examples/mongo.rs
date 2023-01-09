@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use async_trait::async_trait;
+
 use bson::oid::ObjectId;
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
@@ -17,7 +17,7 @@ pub async fn main() -> Result<(), MustyError> {
     let musty = Musty::mongo(client.database("musty"));
 
     // save user
-    let user = User { id: Id::none() };
+    let _user = User { id: Id::none() };
 
     // fetch a user by id
     let id: Id<User, ObjectId> = ObjectId::from_str("63bc2b0f4f603a0ab10e844d")?.into();

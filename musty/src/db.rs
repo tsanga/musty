@@ -1,6 +1,6 @@
 use crate::prelude::Model;
 use async_trait::async_trait;
-use std::ops::Deref;
+
 
 pub struct Db<T> {
     pub(crate) inner: T,

@@ -1,8 +1,8 @@
 use darling::{FromDeriveInput, FromMeta, FromField};
-use proc_macro::{TokenStream};
+
 use proc_macro2::Span;
-use quote::{quote, quote_spanned, format_ident};
-use syn::{DeriveInput, Ident, TypePath, Type, Path};
+use quote::{quote};
+use syn::{Ident, TypePath, Type, Path};
 use proc_macro_error::{
     abort
 };

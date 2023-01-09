@@ -2,16 +2,14 @@ use std::panic;
 
 use async_trait::async_trait;
 use mongodb::{
-    error::Error,
-    error::ErrorKind,
     options::{CollectionOptions, ReadConcern, SelectionCriteria, WriteConcern},
     Collection, Database,
 };
 
-use bson::oid::ObjectId;
+
 
 use crate::prelude::Id;
-use crate::{db::Db, error::MustyError, model::Model, prelude::Identifable};
+use crate::{db::Db, model::Model, prelude::Identifable};
 
 #[async_trait]
 pub trait MongoModel<I: ToString>
@@ -52,7 +50,7 @@ where
 {
     async fn get_model(
         self,
-        db: &crate::db::Db<mongodb::Database>,
+        _db: &crate::db::Db<mongodb::Database>,
     ) -> std::result::Result<M, crate::error::MustyError> {
         panic!("not implemented")
     }
