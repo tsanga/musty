@@ -1,7 +1,5 @@
-use crate::prelude::MustyError;
-use anyhow::Error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{fmt::Display, marker::PhantomData};
+use std::marker::PhantomData;
 
 pub type DefaultType = String;
 pub trait Generated: IdType {}

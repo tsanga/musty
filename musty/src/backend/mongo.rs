@@ -1,14 +1,13 @@
 use std::{marker::PhantomData, pin::Pin, task::Poll};
 
 use async_trait::async_trait;
-use bson::{oid::ObjectId, Document};
+use bson::Document;
 use futures::Stream;
 use mongodb::{
     options::{
         CollectionOptions, FindOneAndReplaceOptions, FindOneOptions, FindOptions, ReadConcern,
         ReturnDocument, SelectionCriteria, WriteConcern,
     },
-    results::DeleteResult,
     Collection, Database,
 };
 
