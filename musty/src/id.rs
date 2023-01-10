@@ -4,8 +4,8 @@ use std::marker::PhantomData;
 pub type DefaultType = String;
 pub trait Generated: IdType {}
 
-pub trait IdType: ToString + Serialize + DeserializeOwned + Clone {}
-impl<T: ToString + Serialize + DeserializeOwned + Clone> IdType for T {}
+pub trait IdType: ToString + Serialize + DeserializeOwned + Clone + Send + Sync {}
+impl<T: ToString + Serialize + DeserializeOwned + Clone + Send + Sync> IdType for T {}
 
 #[derive(Debug)]
 pub struct Id<M, I: IdType = DefaultType> {

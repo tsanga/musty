@@ -1,12 +1,12 @@
 use crate::prelude::{IdType, Model, Result};
 use async_trait::async_trait;
 
-pub struct Db<T> {
+pub struct Db<T: Send> {
     pub(crate) inner: T,
 }
 
 #[cfg(feature = "mongodb")]
-impl<T> Db<T>
+impl<T: Send> Db<T>
 where
     T: Into<mongodb::Database>,
 {

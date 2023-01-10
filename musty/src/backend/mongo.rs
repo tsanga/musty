@@ -6,9 +6,9 @@ use futures::Stream;
 use mongodb::{
     options::{
         CollectionOptions, FindOneAndReplaceOptions, FindOneOptions, FindOptions, ReadConcern,
-        ReturnDocument, SelectionCriteria, WriteConcern,
+        ReturnDocument, SelectionCriteria, WriteConcern, UpdateModifications, FindOneAndUpdateOptions, FindOneAndDeleteOptions, DeleteOptions,
     },
-    Collection, Database,
+    Collection, Database, results::DeleteResult,
 };
 
 use crate::{db::Db, model::Model};
@@ -88,6 +88,47 @@ where
         Ok(Self::collection(db).find_one(filter, options).await?)
     }
 
+    async fn find_one_and_replace<F, O>(db: &Db<Database>, filter: F, replacement: &Self, options: O) -> Result<Option<Self>>
+    where
+        F: Into<Document> + Send,
+        O: Into<Option<FindOneAndReplaceOptions>> + Send,
+    {
+        Ok(Self::collection(db)
+            .find_one_and_replace(filter.into(), replacement, options)
+            .await?)
+    }
+
+    async fn find_one_and_update<F, U, O>(db: &Db<Database>, filter: F, update: U, options: O) -> Result<Option<Self>>
+    where
+        F: Into<Document> + Send,
+        U: Into<UpdateModifications> + Send,
+        O: Into<Option<FindOneAndUpdateOptions>> + Send,
+    {
+        Ok(Self::collection(db)
+            .find_one_and_update(filter.into(), update, options)
+            .await?)
+    }
+
+    async fn find_one_and_delete<F, O>(db: &Db<Database>, filter: F, options: O) -> Result<Option<Self>>
+    where 
+        F: Into<Document> + Send,
+        O: Into<Option<FindOneAndDeleteOptions>> + Send,
+    {
+        Ok(Self::collection(db)
+            .find_one_and_delete(filter.into(), options)
+            .await?)
+    }
+
+    async fn delete_many<F, O>(db: &Db<Database>, filter: F, options: O) -> Result<DeleteResult>
+    where
+        F: Into<Document> + Send,
+        O: Into<Option<DeleteOptions>> + Send,
+    {
+        Ok(Self::collection(db)
+            .delete_many(filter.into(), options)
+            .await?)   
+    }
+
     async fn save(&mut self, db: &Db<Database>) -> Result<()> {
         let collection = Self::collection(db);
 
@@ -117,10 +158,13 @@ where
         Ok(())
     }
 
-    /*async fn delete(&self, db: &Db<Database>) -> Result<DeleteResult> {
+    async fn delete(&self, db: &Db<Database>) -> Result<mongodb::results::DeleteResult> {
         let id = self.id();
-        Ok(Self::collection(db).delete_one(bson::doc! { "_id": "" }, None).await?)
-    }*/
+        if id.is_none() {
+            return Err(MustyError::MongoModelIdRequiredForOperation)
+        }
+        Ok(Self::collection(db).delete_one(bson::doc! { "_id": id }, None).await?)
+    }
 }
 
 #[async_trait]
