@@ -1,5 +1,5 @@
+use bson::doc;
 use mongodb::{options::ClientOptions, Client};
-use bson::{oid::ObjectId, doc};
 use musty::prelude::*;
 
 #[model(mongo(collection = "users"))]
@@ -14,7 +14,10 @@ pub async fn main() -> Result<()> {
     let client = Client::with_options(client_options)?;
     let db = Musty::mongo(client.database("musty"));
 
-    let mut user = User { id: 0.into(), name: String::from("jonah") };
+    let mut user = User {
+        id: 0.into(),
+        name: String::from("jonah"),
+    };
     user.save(&db).await?;
 
     let user = User::find_one(&db, doc! { "name": "jonah" }, None).await?;

@@ -1,0 +1,74 @@
+name: semver
+on:
+  pull_request:
+    branches:
+      - "master"
+jobs:
+  main:
+    name: "ensure version change"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Checkout base
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+      - name: Store base versions
+        run: |
+          BASE_MUSTY_VERSION=$(cargo metadata --no-deps --manifest-path ./musty/Cargo.toml --format-version 1 | jq ".packages[0].version" | tr -d \")
+          BASE_MACRO_VERSION=$(cargo metadata --no-deps --manifest-path ./musty-proc-macro/Cargo.toml --format-version 1 | jq ".packages[0].version" | tr -d \")
+
+          echo "BASE_MUSTY_VERSION=$BASE_MUSTY_VERSION" >> $GITHUB_ENV
+          echo "BASE_MACRO_VERSION=$BASE_MACRO_VERSION" >> $GITHUB_ENV
+      - name: Checkout current
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Check for version change
+        run: |
+          MUSTY_VERSION=$(cargo metadata --no-deps --manifest-path ./musty/Cargo.toml --format-version 1 | jq ".packages[0].version" | tr -d \")
+          MACRO_VERSION=$(cargo metadata --no-deps --manifest-path ./musty-proc-macro/Cargo.toml --format-version 1 | jq ".packages[0].version" | tr -d \")
+
+          MUSTY_MODIFIED=0
+          MACRO_MODIFIED=0
+          git diff --quiet HEAD origin/$GITHUB_BASE_REF -- musty || MUSTY_MODIFIED=1
+          git diff --quiet HEAD origin/$GITHUB_BASE_REF -- musty-proc-macro || MACRO_MODIFIED=1
+
+          if [[ "${{ env.BASE_MUSTY_VERSION }}" > "$MUSTY_VERSION" ]] || [[ "${{ env.BASE_MUSTY_VERSION }}" == "$MUSTY_VERSION" ]]; then VALID_MUSTY=0; else VALID_MUSTY=1; fi
+          if [[ "${{ env.BASE_MACRO_VERSION }}" > "$MACRO_VERSION" ]] || [[ "${{ env.BASE_MACRO_VERSION }}" == "$MACRO_VERSION" ]]; then VALID_MACRO=0; else VALID_MACRO=1; fi
+
+          if [[ "$MUSTY_MODIFIED" == 1 ]] && [[ "$VALID_MUSTY" == 0 ]]; then echo "::error file=musty/Cargo.toml::Semantic versioning check failed. (Source files changed but version remains the same or lower)"; fi
+          if [[ "$MACRO_MODIFIED" == 1 ]] && [[ "$VALID_MACRO" == 0 ]]; then echo "::error file=musty-proc-macro/Cargo.toml::Semantic versioning check failed. (Source files changed but version remains the same or lower)"; fi
+
+          echo "MUSTY_VERSION=$MUSTY_VERSION" >> $GITHUB_ENV
+          echo "MACRO_VERSION=$MACRO_VERSION" >> $GITHUB_ENV
+          echo "MUSTY_MODIFIED=$MUSTY_MODIFIED" >> $GITHUB_ENV
+          echo "MACRO_MODIFIED=$MACRO_MODIFIED" >> $GITHUB_ENV
+          echo "VALID_MUSTY=$VALID_MUSTY" >> $GITHUB_ENV
+          echo "VALID_MACRO=$VALID_MACRO" >> $GITHUB_ENV
+      - name: |
+          [musty-proc-macro] Notify author of invalid version
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            **Semantic versioning check failed.**
+
+            Source code have been modified in either `musty/src` or `musty-proc-macro/src` but the respective crate version has not been changed.
+
+            Please update the version semantically and push the changes.
+            <sub>You can use [cargo bump](https://crates.io/crates/cargo-bump) to do this pretty easily (install with `cargo install cargo-bump`).</sub>
+
+            | ${{ github.base_ref }}  | ${{ github.head_ref }} | Source modified |
+            | ------------- | ------------- |------------- |
+            | `musty@${{ env.BASE_MUSTY_VERSION }}` | `musty@${{ env.MUSTY_VERSION }}` | ${{ env.MUSTY_MODIFIED }} |
+            | `musty-proc-macro@${{ env.BASE_MACRO_VERSION }}`  | `musty-proc-macro@${{ env.MACRO_VERSION }}`  | ${{ env.MACRO_MODIFIED }} |
+
+            [Semantic Versioning](https://semver.org/)
+          comment_tag: execution
+        if: ${{ (env.VALID_MACRO == 0 && env.MACRO_MODIFIED == 1) || (env.VALID_MUSTY == 0 && env.MUSTY_MODIFIED == 1) }}
+      - name: Fail if previous checks errored
+        run: exit 1
+        if: ${{ (env.VALID_MACRO == 0 && env.MACRO_MODIFIED == 1) || (env.VALID_MUSTY == 0 && env.MUSTY_MODIFIED == 1) }}
