@@ -25,5 +25,8 @@ pub async fn main() -> Result<(), MustyError> {
         Err(err) => println!("error: {:?}", err),
     }
 
+    // alternatively:
+    // let user = User::get(&musty, &id).await?;
+
     Ok(())
 }
