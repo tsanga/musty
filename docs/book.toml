@@ -1,0 +1,11 @@
+[book]
+authors = ["Alex Adewole <alex@bizar.re>", "Jonah Seguin <me@jonahseguin.com>"]
+language = "en"
+multilingual = false
+src = "src"
+title = "musty book"
+
+[output.html]
+git-repository-url = "https://github.com/tsanga/musty"
+git-repository-icon = "fa-github"
+edit-url-template = "https://github.com/tsanga/musty/edit/master/docs/{path}"
