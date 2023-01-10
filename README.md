@@ -5,7 +5,8 @@
 ## example
 
 ```rust
-use bson::{oid::ObjectId};
+use mongodb::{options::ClientOptions, Client};
+use bson::{oid::ObjectId, doc};
 use musty::prelude::*;
 
 #[model(mongo(collection = "users"))]
