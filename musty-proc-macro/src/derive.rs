@@ -111,6 +111,7 @@ impl MetaModelDerive {
         let model_struct = self.create_model_struct(&model_id_type, &args);
 
         let mut model = quote! {
+            #[automatically_derived]
             impl musty::prelude::Model<#model_id_type> for #ident where Self: Sized {
                 fn id(&self) -> &Id<Self, #model_id_type> {
                     &self.id
@@ -137,6 +138,7 @@ impl MetaModelDerive {
                 use musty::prelude::async_trait;
 
                 #[async_trait]
+                #[automatically_derived]
                 impl musty::prelude::MongoModel<#model_id_type> for #ident where Self: Sized {
                     const COLLECTION_NAME: &'static str = #collection_name;
                 }
