@@ -1,7 +1,5 @@
-use crate::prelude::MustyError;
-use anyhow::Error;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{fmt::Display, marker::PhantomData};
+use std::marker::PhantomData;
 
 pub type DefaultType = String;
 pub trait Generated: IdType {}
@@ -38,17 +36,6 @@ impl<M, I: IdType> Default for Id<M, I> {
         }
     }
 }
-
-/*
-
-id: { id: { inner: {  } } }
-
-force I to be De + Se
-Impl De + Se for Id where all it does is call serde de/se on inner
-
-{ "$oid": "hex string" }
-
-*/
 
 impl<M, I: IdType> From<I> for Id<M, I> {
     fn from(id: I) -> Self {
@@ -127,16 +114,6 @@ mod bson {
             }
         }
     }
-
-    /*impl<M, I: IdType> From<Id<M, I>> for Bson {
-        fn from(id: Id<M, I>) -> Self {
-            let oid: Result<ObjectId, MustyError> = id.try_into();
-            match oid {
-                Ok(oid) => Bson::ObjectId(oid),
-                Err(_) => Bson::Null,
-            }
-        }
-    }*/
 
     impl<M, I: IdType + Into<Bson>> From<Id<M, I>> for Bson {
         fn from(id: Id<M, I>) -> Self {

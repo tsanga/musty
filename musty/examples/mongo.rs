@@ -4,7 +4,7 @@ use musty::prelude::*;
 
 #[model(mongo(collection = "users"))]
 struct User {
-    id: u32,
+    id: ObjectId,
     name: String,
 }
 
@@ -14,14 +14,11 @@ pub async fn main() -> Result<()> {
     let client = Client::with_options(client_options)?;
     let db = Musty::mongo(client.database("musty"));
 
-    let mut user = User { id: 0.into(), name: String::from("jonah") };
+    let mut user = User { id: ObjectId::new().into(), name: String::from("jonah") };
     user.save(&db).await?;
 
     let user = User::find_one(&db, doc! { "name": "jonah" }, None).await?;
     println!("{:#?}", user);
-
-    // alternatively:
-    // let user = User::get(&musty, &id).await?;
 
     Ok(())
 }
