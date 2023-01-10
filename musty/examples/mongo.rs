@@ -20,5 +20,8 @@ pub async fn main() -> Result<()> {
     let user = User::find_one(&db, doc! { "name": "jonah" }, None).await?;
     println!("{:#?}", user);
 
+    // alternatively:
+    // let user = User::get(&musty, &id).await?;
+
     Ok(())
 }
