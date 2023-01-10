@@ -1,29 +1,24 @@
-use std::str::FromStr;
-
-use bson::oid::ObjectId;
 use mongodb::{options::ClientOptions, Client};
+use bson::{oid::ObjectId, doc};
 use musty::prelude::*;
 
-#[derive(Model, Debug)]
+#[model(mongo(collection = "users"))]
 struct User {
-    id: Id<Self, ObjectId>,
+    id: u32,
+    name: String,
 }
 
 #[tokio::main]
-pub async fn main() -> Result<(), MustyError> {
+pub async fn main() -> Result<()> {
     let client_options = ClientOptions::parse("mongodb://localhost:27017").await?;
     let client = Client::with_options(client_options)?;
-    let musty = Musty::mongo(client.database("musty"));
+    let db = Musty::mongo(client.database("musty"));
 
-    // save user
-    let _user = User { id: Id::none() };
+    let mut user = User { id: 0.into(), name: String::from("jonah") };
+    user.save(&db).await?;
 
-    // fetch a user by id
-    let id: Id<User, ObjectId> = ObjectId::from_str("63bc2b0f4f603a0ab10e844d")?.into();
-    match id.get_model(&musty).await {
-        Ok(user) => println!("user: {:?}", user),
-        Err(err) => println!("error: {:?}", err),
-    }
+    let user = User::find_one(&db, doc! { "name": "jonah" }, None).await?;
+    println!("{:#?}", user);
 
     Ok(())
 }

@@ -6,9 +6,29 @@ pub enum MustyError {
     #[error(transparent)]
     Mongo(#[from] mongodb::error::Error),
 
+    #[cfg(feature = "mongodb")]
+    #[error("MongoDB server failed to return the updated document")]
+    MongoServerFailedToReturnUpdatedDoc,
+
+    #[cfg(feature = "mongodb")]
+    #[error("MongoDB server failed to return the ObjectID of the updated document")]
+    MongoServerFailedToReturnObjectId,
+
+    #[cfg(feature = "mongodb")]
+    #[error("Model requires an ObjectID for this operation")]
+    MongoModelIdRequiredForOperation,
+
     #[cfg(feature = "bson")]
     #[error(transparent)]
-    Bson(#[from] bson::oid::Error),
+    ObjectId(#[from] bson::oid::Error),
+
+    #[cfg(feature = "bson")]
+    #[error(transparent)]
+    BsonSerialization(#[from] bson::ser::Error),
+
+    #[cfg(feature = "bson")]
+    #[error(transparent)]
+    BsonDeserialization(#[from] bson::de::Error),
 
     #[error(transparent)]
     Other(#[from] anyhow::Error),

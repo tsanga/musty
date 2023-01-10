@@ -18,11 +18,18 @@ bson = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 async-trait = "0.1"
 thiserror = "1"
-musty-macro = { path = "../musty-macro" }
+musty-proc-macro = { path = "../musty-proc-macro" }
 anyhow = "1"
+futures = "0.3"
 
 [dev-dependencies]
 tokio = { version = "1" }
+serde_json = "1"
 
 [features]
 default = ["mongodb", "bson", "mongodb/tokio-runtime"]
+
+[[example]]
+name = "mongo"
+path = "examples/mongo.rs"
+required-features = ["mongodb"]

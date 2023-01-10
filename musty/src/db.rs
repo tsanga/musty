@@ -1,4 +1,4 @@
-use crate::prelude::Model;
+use crate::prelude::{IdType, Model, Result};
 use async_trait::async_trait;
 
 pub struct Db<T> {
@@ -18,9 +18,9 @@ where
 #[async_trait]
 pub trait Identifiable<I, M, D>
 where
-    I: ToString + Send + Sync,
+    I: IdType,
     M: Model<I> + Send + Sync,
     D: Send + Sync,
 {
-    async fn get_model(self, db: &Db<D>) -> std::result::Result<M, crate::error::MustyError>;
+    async fn get(self, db: &Db<D>) -> Result<Option<M>>;
 }
