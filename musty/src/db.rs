@@ -1,12 +1,16 @@
-use crate::prelude::{IdType, Model, Result};
+use crate::prelude::{IdType, Model};
 use async_trait::async_trait;
+use crate::Result;
 
-pub struct Db<T> {
+/// The database type that musty uses.
+/// For `mongodb` feature usages, this type will be `Db<mongodb::Database>`
+/// This is a simple wrapper type to allow support for databases other than MongoDB in the future.
+pub struct Db<T: Send> {
     pub(crate) inner: T,
 }
 
 #[cfg(feature = "mongodb")]
-impl<T> Db<T>
+impl<T: Send> Db<T>
 where
     T: Into<mongodb::Database>,
 {
