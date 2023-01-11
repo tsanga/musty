@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+/// Error types used by musty
 #[derive(Debug, Error)]
 pub enum MustyError {
     #[cfg(feature = "mongodb")]

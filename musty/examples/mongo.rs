@@ -9,7 +9,7 @@ struct User {
 }
 
 #[tokio::main]
-pub async fn main() -> Result<()> {
+pub async fn main() -> musty::Result<()> {
     let client_options = ClientOptions::parse("mongodb://localhost:27017").await?;
     let client = Client::with_options(client_options)?;
     let db = Musty::mongo(client.database("musty"));
