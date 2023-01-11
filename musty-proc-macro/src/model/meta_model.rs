@@ -5,35 +5,34 @@ use proc_macro_error::abort;
 use quote::quote;
 use syn::{Ident, Path, Type, TypePath, Visibility};
 
-/// Attributes for fields on a model struct:
-/// #[musty(id)]
-#[derive(FromMeta)]
-struct MustyAttrs {
-    #[darling(default)]
-    pub(crate) id: bool,
-}
-
-/// MongoDB-specific attributes for a model struct:
-/// #[model(mongo(collection = "users"))]
-#[derive(Default, FromMeta)]
-#[darling(default)]
-pub struct MongoAttrs {
-    pub(crate) collection: Option<String>,
-}
+use super::mongo_model::{ModelMongoAttrs, MustyMongoFieldAttrs};
 
 /// Attributes for a model struct:
 /// #[model(mongo(...))]
-#[derive(FromMeta)]
+#[derive(Default, FromMeta)]
+#[darling(default)]
 pub(crate) struct MetaModelAttr {
-    mongo: Option<MongoAttrs>,
+    pub(crate) mongo: Option<ModelMongoAttrs>,
 }
 
 /// A field on a model struct
 #[derive(FromField)]
-pub struct MetaModelField {
-    ident: Option<Ident>,
-    ty: syn::Type,
-    musty: Option<MustyAttrs>,
+#[darling(attributes(musty))]
+pub(crate) struct MetaModelField {
+    pub(crate) ident: Option<Ident>,
+    pub(crate) ty: syn::Type,
+    #[darling(default)]
+    pub(crate) id: bool,
+    /// skip a field: #[musty(skip)]
+    #[darling(default)]
+    pub(crate) skip: bool,
+    /// rename a field: #[musty(rename = "new_field_name")]
+    #[darling(default)]
+    pub(crate) rename: Option<String>,
+    /// mongo-specific attributes on a field:
+    /// #[musty(mongo(...))]
+    #[darling(default)]
+    pub(crate) mongo: Option<MustyMongoFieldAttrs>,
 }
 
 /// The root derive type for a model struct
@@ -57,8 +56,7 @@ impl MetaModelDerive {
         };
 
         let id_field = fields.iter().find(|field| {
-            field.musty.as_ref().map(|musty| musty.id).unwrap_or(false)
-                || field.ident == Some(Ident::new("id", Span::call_site()))
+            field.id || field.ident == Some(Ident::new("id", Span::call_site()))
         });
 
         if id_field.is_none() {
@@ -88,7 +86,7 @@ impl MetaModelDerive {
         let vis = &self.vis;
         let mut id_attr = quote! { #[serde(skip)] };
 
-        if args.mongo.is_some() {
+        if args.mongo.as_ref().is_some() {
             id_attr = quote! { #[serde(rename = "_id", skip_serializing_if = "musty::prelude::Id::is_none")] };
         }
 
@@ -99,15 +97,20 @@ impl MetaModelDerive {
 
         let fields = fields
             .iter()
-            .filter(|field| {
-                !field.musty.as_ref().map(|musty| musty.id).unwrap_or(false)
-                    && field.ident != Some(Ident::new("id", Span::call_site()))
-            })
+            .filter(|field| { !field.id && field.ident != Some(Ident::new("id", Span::call_site())) })
             .map(|field| {
                 let ident = field.ident.as_ref().unwrap();
                 let ty = &field.ty;
-
+                let mut field_attr = quote! {};
+                if field.skip {
+                    field_attr = quote! { #[serde(skip)] }
+                } else if let Some(rename) = field.rename.as_ref() {
+                    field_attr = quote! { 
+                        #[serde(rename = #rename)]
+                    }
+                }
                 quote! {
+                    #field_attr
                     #ident: #ty
                 }
             });
@@ -144,13 +147,17 @@ impl MetaModelDerive {
             }
         };
 
-        if let Some(mongo_attrs) = args.mongo {
+        if let Some(mongo_attrs) = args.mongo.as_ref() {
             let mongo_model = super::mongo_model::expand_mongo_model(&self, &mongo_attrs);
+
+            let mongo_fields_impl = super::mongo_model::expand_mongo_fields_impl(&self);
 
             model = quote! {
                 #model
 
                 #mongo_model
+
+                #mongo_fields_impl
             };
         }
 
