@@ -2,6 +2,8 @@
 
 **An ODM for your favourite NoSQL database.**
 
+**musty** is an asynchronous [object-document mapper](https://en.wikipedia.org/wiki/Object–relational_mapping) library for Rust. It turns your `struct`'s into queryable database models.
+
 ## example
 
 ```rust

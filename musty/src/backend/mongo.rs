@@ -2,6 +2,7 @@ use std::{marker::PhantomData, pin::Pin, task::Poll};
 
 use async_trait::async_trait;
 use bson::Document;
+use bson::Document;
 use futures::Stream;
 use mongodb::{
     options::{

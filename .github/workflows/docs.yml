@@ -1,0 +1,19 @@
+name: docs
+on:
+  push:
+    branches:
+      - 'master'
+jobs:
+  cargo:
+    name: "docs: build & deploy"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: | 
+        mkdir bin
+        curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.25/mdbook-v0.4.25-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=bin
+        bin/mdbook build docs
+    - name: Deploy 🚀
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: docs/book

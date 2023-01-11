@@ -31,7 +31,7 @@ pub(crate) struct MetaModelDerive {
     ident: Ident,
     vis: Visibility,
     data: darling::ast::Data<darling::util::Ignored, MetaModelField>,
-}   
+}
 
 #[derive(FromMeta)]
 pub(crate) struct MetaModelAttr {
@@ -48,12 +48,10 @@ impl MetaModelDerive {
             _ => abort!(ident.span(), "Model must be a struct"),
         };
 
-        let id_field = fields
-            .iter()
-            .find(|field| { 
-                field.musty.as_ref().map(|musty| musty.id).unwrap_or(false) ||
-                field.ident == Some(Ident::new("id", Span::call_site())) 
-            });
+        let id_field = fields.iter().find(|field| {
+            field.musty.as_ref().map(|musty| musty.id).unwrap_or(false)
+                || field.ident == Some(Ident::new("id", Span::call_site()))
+        });
 
         if id_field.is_none() {
             abort!(ident.span(), "{} must have an `id` field", ident);
@@ -69,14 +67,18 @@ impl MetaModelDerive {
         return path.clone();
     }
 
-    fn create_model_struct(&self, id_type: &Path, args: &MetaModelAttr) -> proc_macro2::TokenStream {
+    fn create_model_struct(
+        &self,
+        id_type: &Path,
+        args: &MetaModelAttr,
+    ) -> proc_macro2::TokenStream {
         let ident = &self.ident;
         let data = &self.data;
         let vis = &self.vis;
-        let mut id_attr = quote!{ #[serde(skip)] };
+        let mut id_attr = quote! { #[serde(skip)] };
 
         if args.mongo.is_some() {
-            id_attr = quote!{ #[serde(rename = "_id", skip_serializing_if = "musty::prelude::Id::is_none")] };
+            id_attr = quote! { #[serde(rename = "_id", skip_serializing_if = "musty::prelude::Id::is_none")] };
         }
 
         let fields = match data {
@@ -84,24 +86,30 @@ impl MetaModelDerive {
             _ => abort!(ident.span(), "Model must be a struct"),
         };
 
-        let fields = fields.iter().filter(|field| !field.musty.as_ref().map(|musty| musty.id).unwrap_or(false) &&
-        field.ident != Some(Ident::new("id", Span::call_site())) ).map(|field| {
-            let ident = field.ident.as_ref().unwrap();
-            let ty = &field.ty;
+        let fields = fields
+            .iter()
+            .filter(|field| {
+                !field.musty.as_ref().map(|musty| musty.id).unwrap_or(false)
+                    && field.ident != Some(Ident::new("id", Span::call_site()))
+            })
+            .map(|field| {
+                let ident = field.ident.as_ref().unwrap();
+                let ty = &field.ty;
 
-            quote! {
-                #ident: #ty
-            }
-        });
+                quote! {
+                    #ident: #ty
+                }
+            });
 
-        quote! { 
+        quote! {
             #[derive(Debug, serde::Serialize, serde::Deserialize)]
             #vis struct #ident {
                 #id_attr
                 id: musty::prelude::Id<Self, #id_type>,
                 #(#fields),*
             }
-        }.into()
+        }
+        .into()
     }
 
     pub fn expand(self, args: MetaModelAttr) -> proc_macro::TokenStream {
