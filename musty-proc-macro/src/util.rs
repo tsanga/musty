@@ -1,4 +1,5 @@
 pub(crate) mod string {
+    /// convert string to table case. i.e "MyUser" -> "my_user" 
     pub trait ToTableCase {
         fn to_table_case(self) -> String;
     }
@@ -22,7 +23,7 @@ pub(crate) mod string {
         }
     }
 
-    // convert string to plural form. i.e: "user" -> "users"
+    /// convert string to plural form. i.e: "user" -> "users"
     pub trait ToPlural {
         fn to_plural(&self) -> String;
     }

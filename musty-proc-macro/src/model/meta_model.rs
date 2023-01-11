@@ -1,17 +1,34 @@
 use darling::{FromDeriveInput, FromField, FromMeta};
 
-use crate::util::string::{ToPlural, ToTableCase};
 use proc_macro2::Span;
 use proc_macro_error::abort;
 use quote::quote;
 use syn::{Ident, Path, Type, TypePath, Visibility};
 
+/// Attributes for fields on a model struct:
+/// #[musty(id)]
 #[derive(FromMeta)]
 struct MustyAttrs {
     #[darling(default)]
     pub(crate) id: bool,
 }
 
+/// MongoDB-specific attributes for a model struct:
+/// #[model(mongo(collection = "users"))]
+#[derive(Default, FromMeta)]
+#[darling(default)]
+pub struct MongoAttrs {
+    pub(crate) collection: Option<String>,
+}
+
+/// Attributes for a model struct:
+/// #[model(mongo(...))]
+#[derive(FromMeta)]
+pub(crate) struct MetaModelAttr {
+    mongo: Option<MongoAttrs>,
+}
+
+/// A field on a model struct
 #[derive(FromField)]
 pub struct MetaModelField {
     ident: Option<Ident>,
@@ -19,27 +36,18 @@ pub struct MetaModelField {
     musty: Option<MustyAttrs>,
 }
 
-#[derive(Default, FromMeta)]
-#[darling(default)]
-pub struct MongoAttrs {
-    collection: Option<String>,
-}
-
+/// The root derive type for a model struct
 #[derive(FromDeriveInput)]
 #[darling(attributes(model), forward_attrs(allow, doc, cfg))]
 pub(crate) struct MetaModelDerive {
-    ident: Ident,
-    vis: Visibility,
-    data: darling::ast::Data<darling::util::Ignored, MetaModelField>,
-}
-
-#[derive(FromMeta)]
-pub(crate) struct MetaModelAttr {
-    mongo: Option<MongoAttrs>,
+    pub(crate) ident: Ident,
+    pub(crate) vis: Visibility,
+    pub(crate) data: darling::ast::Data<darling::util::Ignored, MetaModelField>,
 }
 
 impl MetaModelDerive {
-    fn get_model_id_type(&self) -> Path {
+    /// Get the type of the `id` field (or field with attribute #[musty(id)]) on the model struct
+    pub(crate) fn get_model_id_type(&self) -> Path {
         let ident = &self.ident;
         let data = &self.data;
 
@@ -67,6 +75,9 @@ impl MetaModelDerive {
         return path.clone();
     }
 
+    /// Re-creates the struct for the Model that had the attribute #[model(...)] macro on it
+    /// This edits the id type to be `musty::prelude::Id<Self, #id_type>` and adds necessary serde attributes,
+    /// and required derives (Debug, serde::Serialize, serde::Deserialize)
     fn create_model_struct(
         &self,
         id_type: &Path,
@@ -112,6 +123,8 @@ impl MetaModelDerive {
         .into()
     }
 
+    /// Expands the model struct and the `Model` trait implementation for the model struct
+    /// If the `mongo` attribute is present, this also expands the `MongoModel` trait implementation
     pub fn expand(self, args: MetaModelAttr) -> proc_macro::TokenStream {
         let ident = &self.ident;
 
@@ -132,24 +145,12 @@ impl MetaModelDerive {
         };
 
         if let Some(mongo_attrs) = args.mongo {
-            let collection_name = mongo_attrs.collection.unwrap_or_else(|| {
-                ident
-                    .to_string()
-                    .to_table_case()
-                    .to_ascii_lowercase()
-                    .to_plural()
-            });
+            let mongo_model = super::mongo_model::expand_mongo_model(&self, &mongo_attrs);
 
             model = quote! {
                 #model
 
-                use musty::prelude::async_trait;
-
-                #[async_trait]
-                #[automatically_derived]
-                impl musty::prelude::MongoModel<#model_id_type> for #ident where Self: Sized {
-                    const COLLECTION_NAME: &'static str = #collection_name;
-                }
+                #mongo_model
             };
         }
 
