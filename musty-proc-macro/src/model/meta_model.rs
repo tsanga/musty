@@ -1,45 +1,52 @@
 use darling::{FromDeriveInput, FromField, FromMeta};
 
-use crate::util::string::{ToPlural, ToTableCase};
 use proc_macro2::Span;
 use proc_macro_error::abort;
 use quote::quote;
 use syn::{Ident, Path, Type, TypePath, Visibility};
 
-#[derive(FromMeta)]
-struct MustyAttrs {
-    #[darling(default)]
-    pub(crate) id: bool,
-}
+use super::mongo_model::{ModelMongoAttrs, MustyMongoFieldAttrs};
 
-#[derive(FromField)]
-pub struct MetaModelField {
-    ident: Option<Ident>,
-    ty: syn::Type,
-    musty: Option<MustyAttrs>,
-}
-
+/// Attributes for a model struct:
+/// #[model(mongo(...))]
 #[derive(Default, FromMeta)]
 #[darling(default)]
-pub struct MongoAttrs {
-    collection: Option<String>,
+pub(crate) struct MetaModelAttr {
+    pub(crate) mongo: Option<ModelMongoAttrs>,
 }
 
+/// A field on a model struct
+#[derive(FromField)]
+#[darling(attributes(musty))]
+pub(crate) struct MetaModelField {
+    pub(crate) ident: Option<Ident>,
+    pub(crate) ty: syn::Type,
+    #[darling(default)]
+    pub(crate) id: bool,
+    /// skip a field: #[musty(skip)]
+    #[darling(default)]
+    pub(crate) skip: bool,
+    /// rename a field: #[musty(rename = "new_field_name")]
+    #[darling(default)]
+    pub(crate) rename: Option<String>,
+    /// mongo-specific attributes on a field:
+    /// #[musty(mongo(...))]
+    #[darling(default)]
+    pub(crate) mongo: Option<MustyMongoFieldAttrs>,
+}
+
+/// The root derive type for a model struct
 #[derive(FromDeriveInput)]
 #[darling(attributes(model), forward_attrs(allow, doc, cfg))]
 pub(crate) struct MetaModelDerive {
-    ident: Ident,
-    vis: Visibility,
-    data: darling::ast::Data<darling::util::Ignored, MetaModelField>,
-}
-
-#[derive(FromMeta)]
-pub(crate) struct MetaModelAttr {
-    mongo: Option<MongoAttrs>,
+    pub(crate) ident: Ident,
+    pub(crate) vis: Visibility,
+    pub(crate) data: darling::ast::Data<darling::util::Ignored, MetaModelField>,
 }
 
 impl MetaModelDerive {
-    fn get_model_id_type(&self) -> Path {
+    /// Get the type of the `id` field (or field with attribute #[musty(id)]) on the model struct
+    pub(crate) fn get_model_id_type(&self) -> Path {
         let ident = &self.ident;
         let data = &self.data;
 
@@ -49,8 +56,7 @@ impl MetaModelDerive {
         };
 
         let id_field = fields.iter().find(|field| {
-            field.musty.as_ref().map(|musty| musty.id).unwrap_or(false)
-                || field.ident == Some(Ident::new("id", Span::call_site()))
+            field.id || field.ident == Some(Ident::new("id", Span::call_site()))
         });
 
         if id_field.is_none() {
@@ -67,6 +73,9 @@ impl MetaModelDerive {
         return path.clone();
     }
 
+    /// Re-creates the struct for the Model that had the attribute #[model(...)] macro on it
+    /// This edits the id type to be `musty::prelude::Id<Self, #id_type>` and adds necessary serde attributes,
+    /// and required derives (Debug, serde::Serialize, serde::Deserialize)
     fn create_model_struct(
         &self,
         id_type: &Path,
@@ -77,7 +86,7 @@ impl MetaModelDerive {
         let vis = &self.vis;
         let mut id_attr = quote! { #[serde(skip)] };
 
-        if args.mongo.is_some() {
+        if args.mongo.as_ref().is_some() {
             id_attr = quote! { #[serde(rename = "_id", skip_serializing_if = "musty::prelude::Id::is_none")] };
         }
 
@@ -88,15 +97,20 @@ impl MetaModelDerive {
 
         let fields = fields
             .iter()
-            .filter(|field| {
-                !field.musty.as_ref().map(|musty| musty.id).unwrap_or(false)
-                    && field.ident != Some(Ident::new("id", Span::call_site()))
-            })
+            .filter(|field| { !field.id && field.ident != Some(Ident::new("id", Span::call_site())) })
             .map(|field| {
                 let ident = field.ident.as_ref().unwrap();
                 let ty = &field.ty;
-
+                let mut field_attr = quote! {};
+                if field.skip {
+                    field_attr = quote! { #[serde(skip)] }
+                } else if let Some(rename) = field.rename.as_ref() {
+                    field_attr = quote! { 
+                        #[serde(rename = #rename)]
+                    }
+                }
                 quote! {
+                    #field_attr
                     #ident: #ty
                 }
             });
@@ -112,6 +126,8 @@ impl MetaModelDerive {
         .into()
     }
 
+    /// Expands the model struct and the `Model` trait implementation for the model struct
+    /// If the `mongo` attribute is present, this also expands the `MongoModel` trait implementation
     pub fn expand(self, args: MetaModelAttr) -> proc_macro::TokenStream {
         let ident = &self.ident;
 
@@ -131,25 +147,17 @@ impl MetaModelDerive {
             }
         };
 
-        if let Some(mongo_attrs) = args.mongo {
-            let collection_name = mongo_attrs.collection.unwrap_or_else(|| {
-                ident
-                    .to_string()
-                    .to_table_case()
-                    .to_ascii_lowercase()
-                    .to_plural()
-            });
+        if let Some(mongo_attrs) = args.mongo.as_ref() {
+            let mongo_model = super::mongo_model::expand_mongo_model(&self, &mongo_attrs);
+
+            let mongo_fields_impl = super::mongo_model::expand_mongo_fields_impl(&self);
 
             model = quote! {
                 #model
 
-                use musty::prelude::async_trait;
+                #mongo_model
 
-                #[async_trait]
-                #[automatically_derived]
-                impl musty::prelude::MongoModel<#model_id_type> for #ident where Self: Sized {
-                    const COLLECTION_NAME: &'static str = #collection_name;
-                }
+                #mongo_fields_impl
             };
         }
 

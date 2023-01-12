@@ -1,10 +1,13 @@
+#![allow(unused_variables)]
+
 use mongodb::{options::ClientOptions, Client};
 use bson::{oid::ObjectId, doc};
 use musty::prelude::*;
 
-#[model(mongo())] // The `collection = "name"` attribute is optional.  It will default to the name of your struct, converted to table case and plural (in this case: "users")
+#[model(mongo(collection = "users"))] // The `collection = "name"` attribute is optional.  It will default to the name of your struct, converted to table case and plural (in this case: "users")
 struct User {
     id: ObjectId,
+    #[musty(mongo(get_by))] // generates a `User::get_by_name(db, name)` method
     name: String,
 }
 
@@ -20,6 +23,9 @@ pub async fn main() -> musty::Result<()> {
 
     // Get the user from the collection by name
     let user = User::find_one(&db, doc! { "name": "jonah" }, None).await?;
+    println!("{:#?}", user);
+
+    let user2 = User::get_by_name(&db, "jonah".to_string()).await?;
     println!("{:#?}", user);
 
     Ok(())
