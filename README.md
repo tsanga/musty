@@ -21,7 +21,7 @@ struct User {
 pub async fn main() -> Result<()> {
     let client_options = ClientOptions::parse("mongodb://localhost:27017").await?;
     let client = Client::with_options(client_options)?;
-    let db = Musty::mongo(client.database("musty"));
+    let db = Musty::new(client.database("musty"));
 
     let mut user = User { id: ObjectId::new().into(), name: String::from("jonah") };
     user.save(&db).await?;

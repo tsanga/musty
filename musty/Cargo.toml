@@ -28,8 +28,3 @@ serde_json = "1"
 
 [features]
 default = ["mongodb", "bson", "mongodb/tokio-runtime"]
-
-[[example]]
-name = "mongo"
-path = "examples/mongo.rs"
-required-features = ["mongodb"]

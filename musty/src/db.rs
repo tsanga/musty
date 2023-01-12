@@ -14,7 +14,7 @@ impl<T: Send> Db<T>
 where
     T: Into<mongodb::Database>,
 {
-    pub fn mongo(db: T) -> Db<mongodb::Database> {
+    pub fn new(db: T) -> Db<mongodb::Database> {
         Db { inner: db.into() }
     }
 }
