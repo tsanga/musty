@@ -39,9 +39,9 @@ where
     M: MongoModel<I> + 'static,
     I: IdType + Into<bson::Bson>,
 {
-    type Context = Collection<Self>;
+    type Output = Collection<Self>;
 
-    fn contextualize(db: &Database) -> Self::Context {
+    fn contextualize(db: &Database) -> Self::Output {
         db.collection(Self::COLLECTION_NAME)
     }
 }

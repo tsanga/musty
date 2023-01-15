@@ -1,10 +1,10 @@
-use crate::Result;
+use crate::{Result, prelude::{Backend, IdType}};
 use std::any::Any;
 
-pub trait Context<I, T>: Send + Sync {
-    type Context: Any + Clone + Send + Sync;
+pub trait Context<I, T>: Send + Sync where T: Backend, I: IdType {
+    type Output: Any + Clone + Send + Sync;
 
-    fn contextualize(context: &T) -> Self::Context;
+    fn contextualize(context: &T) -> Self::Output;
 
     fn contextualize_boxed_downcast<D: 'static>(context: &T) -> Result<D> {
         let boxed: Box<dyn Any + Send> = Box::new(Self::contextualize(context));
