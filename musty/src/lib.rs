@@ -1,5 +1,5 @@
 mod backend;
-mod ctx;
+mod context;
 mod cursor;
 mod db;
 mod error;
@@ -19,7 +19,7 @@ pub type Result<T> = std::result::Result<T, error::MustyError>;
 /// use musty::prelude::*;
 pub mod prelude {
     pub use crate::backend::Backend;
-    pub use crate::ctx::Context;
+    pub use crate::context::Context;
     pub use crate::db::Db as Musty;
     pub use crate::error::MustyError;
     pub use crate::id::DefaultType as DefaultIdType;
