@@ -22,11 +22,10 @@ pub async fn main() -> musty::Result<()> {
         id: ObjectId::new().into(),
         name: String::from("jonah"),
     };
-
     user.save(&db).await?;
 
     // Get the user from the collection by name
-    let user = User::find_one(&db, doc! { "name": "jonah" }, None).await?;
+    let user = User::find_one(&db, doc! { "name": "jonah" }).await?;
     println!("{:#?}", user);
 
     let user2 = User::get_by_name(&db, "jonah".to_string()).await?;

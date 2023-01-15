@@ -6,7 +6,7 @@ use futures::Stream;
 use mongodb::{
     options::{
         CollectionOptions, DeleteOptions, FindOneAndDeleteOptions, FindOneAndReplaceOptions,
-        FindOneAndUpdateOptions, FindOneOptions, FindOptions, ReadConcern, ReturnDocument,
+        FindOneAndUpdateOptions, FindOptions, ReadConcern, ReturnDocument,
         SelectionCriteria, UpdateModifications, WriteConcern,
     },
     results::DeleteResult,
@@ -20,6 +20,8 @@ use super::Backend;
 
 #[async_trait]
 impl Backend for Database {
+    type Filter = Document;
+
     async fn get_model_by_id<C, I>(&self, id: &Id<C, I>) -> Result<Option<C>>
     where
         I: IdType,
@@ -90,6 +92,25 @@ impl Backend for Database {
                 .delete_one(bson::doc! { "_id": id? }, None)
                 .await
                 .map(|res| res.deleted_count > 0)
+                .map_err(|e| e.into())
+        } else {
+            Err(MustyError::Other(anyhow::anyhow!(
+                "Could not delete model: no collection found"
+            )))
+        }
+    }
+
+    async fn find_one<C, I, F>(&self, filter: F) -> Result<Option<C>>
+    where
+        I: IdType,
+        C: Context<I, Self> + Model<I> + 'static,
+        F: Into<Self::Filter> + Send + Sync,
+    {
+        let filter = filter.into();
+        if let Ok(collection) = C::contextualize_boxed_downcast::<Collection<C>>(&self) {
+            collection
+                .find_one(filter, None)
+                .await
                 .map_err(|e| e.into())
         } else {
             Err(MustyError::Other(anyhow::anyhow!(
@@ -178,16 +199,6 @@ where
             .find(filter, options)
             .await
             .map(MongoCursor::new)?)
-    }
-
-    /// Find one instance of this model type that matches the given filter
-    /// ex `bson::doc! { "name": "John" }`
-    async fn find_one<F, O>(db: &Db<Database>, filter: F, options: O) -> Result<Option<Self>>
-    where
-        F: Into<Option<Document>> + Send,
-        O: Into<Option<FindOneOptions>> + Send,
-    {
-        Ok(Self::collection(db).find_one(filter, options).await?)
     }
 
     /// Find a single document and replace it

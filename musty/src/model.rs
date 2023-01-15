@@ -52,4 +52,12 @@ where
     {
         db.inner.delete_model(self).await
     }
+
+    async fn find_one<B>(db: &Db<B>, filter: B::Filter) -> Result<Option<Self>>
+    where
+        Self: Context<I, B> + 'static,
+        B: Backend,
+    {
+        db.inner.find_one(filter).await
+    }
 }
