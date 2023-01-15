@@ -93,7 +93,7 @@ mod bson {
     use crate::error::MustyError;
 
     use super::*;
-    use ::bson::{oid::ObjectId, Bson};
+    use ::bson::{oid::ObjectId, to_bson, Bson};
 
     impl Generated for ObjectId {}
 
@@ -123,11 +123,30 @@ mod bson {
         }
     }
 
-    impl<M, I: IdType + Into<Bson>> From<Id<M, I>> for Bson {
-        fn from(id: Id<M, I>) -> Self {
+    impl<M, I> TryFrom<Id<M, I>> for Bson
+    where
+        I: IdType,
+    {
+        type Error = MustyError;
+
+        fn try_from(id: Id<M, I>) -> Result<Self, Self::Error> {
             match id.inner {
-                Some(id) => id.into(),
-                None => Bson::Null,
+                Some(id) => bson::to_bson(&id).map_err(|e| MustyError::Other(e.into())),
+                None => Ok(Bson::Null),
+            }
+        }
+    }
+
+    impl<M, I> TryFrom<&Id<M, I>> for Bson
+    where
+        I: IdType,
+    {
+        type Error = MustyError;
+
+        fn try_from(id: &Id<M, I>) -> Result<Self, Self::Error> {
+            match &id.inner {
+                Some(id) => bson::to_bson(id).map_err(|e| MustyError::Other(e.into())),
+                None => Ok(Bson::Null),
             }
         }
     }

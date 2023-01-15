@@ -1,28 +1,55 @@
 use std::{marker::PhantomData, pin::Pin, task::Poll};
 
 use async_trait::async_trait;
-use bson::Document;
+use bson::{Bson, Document};
 use futures::Stream;
 use mongodb::{
     options::{
-        CollectionOptions, FindOneAndReplaceOptions, FindOneOptions, FindOptions, ReadConcern,
-        ReturnDocument, SelectionCriteria, WriteConcern, UpdateModifications, FindOneAndUpdateOptions, FindOneAndDeleteOptions, DeleteOptions,
+        CollectionOptions, DeleteOptions, FindOneAndDeleteOptions, FindOneAndReplaceOptions,
+        FindOneAndUpdateOptions, FindOneOptions, FindOptions, ReadConcern, ReturnDocument,
+        SelectionCriteria, UpdateModifications, WriteConcern,
     },
-    Collection, Database, results::DeleteResult,
+    results::DeleteResult,
+    Collection, Database,
 };
 
-use crate::{db::Db, model::Model};
-use crate::{
-    error::MustyError,
-    id::IdType,
-    prelude::{Id, Identifiable},
-    Result,
-};
+use crate::{db::Db, model::Model, prelude::Context};
+use crate::{error::MustyError, id::IdType, prelude::Id, Result};
+
+use super::Backend;
+
+#[async_trait]
+impl Backend for Database {
+    async fn get_model_by_id<C, I>(&self, id: &Id<C, I>) -> Result<Option<C>>
+    where
+        I: IdType,
+        C: Context<I, Self> + Model<I> + 'static,
+    {
+        if let Ok(collection) = C::contextualize_boxed_downcast::<Collection<C>>(&self) {
+            let id: Result<Bson> = id.try_into();
+            return Ok(collection.find_one(bson::doc!("_id": id?), None).await?);
+        }
+
+        Ok(None)
+    }
+}
+
+impl<I, M> Context<I, Database> for M
+where
+    M: MongoModel<I> + 'static,
+    I: IdType + Into<bson::Bson>,
+{
+    type Context = Collection<Self>;
+
+    fn contextualize(db: &Database) -> Self::Context {
+        db.collection(Self::COLLECTION_NAME)
+    }
+}
 
 /// The model implementation used by models which use MongoDB as a backend.
 /// Automatically implemented when using `#[model(mongo)]` on a model.
 #[async_trait]
-pub trait MongoModel<I: IdType + Into<bson::Bson>>
+pub trait MongoModel<I: IdType>
 where
     Self: Model<I>,
 {
@@ -73,15 +100,6 @@ where
         Ok(bson::from_bson::<Self>(bson::Bson::Document(document))?)
     }
 
-    /// Get an instance of this model type by `Id`
-    async fn get_by_id<II: Into<Id<Self, I>> + Send>(
-        db: &Db<Database>,
-        id: II,
-    ) -> Result<Option<Self>> {
-        let filter = bson::doc! { "_id": id.into() };
-        Ok(Self::collection(db).find_one(filter, None).await?)
-    }
-
     /// Find instances of this model type that match the given filter (ex `bson::doc! { "name": "John" }`)
     /// Returns a `MongoCursor` which can be used to iterate over the results
     /// Use `futures::StreamExt` to iterate over the results using
@@ -108,7 +126,12 @@ where
     }
 
     /// Find a single document and replace it
-    async fn find_one_and_replace<F, O>(db: &Db<Database>, filter: F, replacement: &Self, options: O) -> Result<Option<Self>>
+    async fn find_one_and_replace<F, O>(
+        db: &Db<Database>,
+        filter: F,
+        replacement: &Self,
+        options: O,
+    ) -> Result<Option<Self>>
     where
         F: Into<Document> + Send,
         O: Into<Option<FindOneAndReplaceOptions>> + Send,
@@ -119,7 +142,12 @@ where
     }
 
     /// Find a single document and update it
-    async fn find_one_and_update<F, U, O>(db: &Db<Database>, filter: F, update: U, options: O) -> Result<Option<Self>>
+    async fn find_one_and_update<F, U, O>(
+        db: &Db<Database>,
+        filter: F,
+        update: U,
+        options: O,
+    ) -> Result<Option<Self>>
     where
         F: Into<Document> + Send,
         U: Into<UpdateModifications> + Send,
@@ -131,8 +159,12 @@ where
     }
 
     /// Find a single document and delete it
-    async fn find_one_and_delete<F, O>(db: &Db<Database>, filter: F, options: O) -> Result<Option<Self>>
-    where 
+    async fn find_one_and_delete<F, O>(
+        db: &Db<Database>,
+        filter: F,
+        options: O,
+    ) -> Result<Option<Self>>
+    where
         F: Into<Document> + Send,
         O: Into<Option<FindOneAndDeleteOptions>> + Send,
     {
@@ -149,7 +181,7 @@ where
     {
         Ok(Self::collection(db)
             .delete_many(filter.into(), options)
-            .await?)   
+            .await?)
     }
 
     /// Save this model instance to the database
@@ -167,8 +199,9 @@ where
             .return_document(Some(ReturnDocument::After))
             .build();
 
+        let id: Result<Bson> = self.id().try_into();
         let filter = match &self.id().inner {
-            Some(_) => bson::doc! { "_id": &self.id() },
+            Some(_) => bson::doc! { "_id": id? },
             None => bson::doc! {},
         };
 
@@ -187,20 +220,13 @@ where
     async fn delete(&self, db: &Db<Database>) -> Result<mongodb::results::DeleteResult> {
         let id = self.id();
         if id.is_none() {
-            return Err(MustyError::MongoModelIdRequiredForOperation)
+            return Err(MustyError::MongoModelIdRequiredForOperation);
         }
-        Ok(Self::collection(db).delete_one(bson::doc! { "_id": id }, None).await?)
-    }
-}
 
-#[async_trait]
-impl<I, M> Identifiable<I, M, Database> for Id<M, I>
-where
-    I: IdType + Send + Sync + Into<bson::Bson>,
-    M: MongoModel<I> + Send + Sync,
-{
-    async fn get(self, _db: &crate::db::Db<mongodb::Database>) -> Result<Option<M>> {
-        M::get_by_id(_db, self).await.map_err(|err| err.into())
+        let id: Result<Bson> = id.try_into();
+        Ok(Self::collection(db)
+            .delete_one(bson::doc! { "_id": id? }, None)
+            .await?)
     }
 }
 
