@@ -32,6 +32,47 @@ impl Backend for Database {
 
         Ok(None)
     }
+
+    /// Save this model instance to the database
+    /// Uses `upsert: true` with `find_one_and_replace` using the _id field of the document as a filter
+    /// Updates the id field of this model instance with the new id from the database
+    async fn save_model<C, I>(&self, model: &mut C) -> Result<()>
+    where
+        I: IdType,
+        C: Context<I, Self> + Model<I> + 'static,
+    {
+        if let Ok(collection) = C::contextualize_boxed_downcast::<Collection<C>>(&self) {
+            // todo: copy write concern over from collection options, probably by using tuple above instead of just collection
+            let mut write_concern = WriteConcern::default();
+            write_concern.journal = Some(true);
+
+            let find_options = FindOneAndReplaceOptions::builder()
+                .upsert(Some(true))
+                .write_concern(Some(write_concern))
+                .return_document(Some(ReturnDocument::After))
+                .build();
+
+            let id: Result<Bson> = model.id().try_into();
+            let filter = match &model.id().inner {
+                Some(_) => bson::doc! { "_id": id? },
+                None => bson::doc! {},
+            };
+
+            let updated_model = collection
+                .find_one_and_replace(filter, &(*model), Some(find_options))
+                .await?
+                .ok_or(MustyError::MongoServerFailedToReturnUpdatedDoc)?;
+
+            let updated_oid = updated_model.id().clone();
+            model.set_id(updated_oid);
+
+            Ok(())   
+        } else {
+            Err(MustyError::Other(anyhow::anyhow!(
+                "Could not save model: no collection found"
+            )))
+        }
+    }
 }
 
 impl<I, M> Context<I, Database> for M
@@ -182,37 +223,6 @@ where
         Ok(Self::collection(db)
             .delete_many(filter.into(), options)
             .await?)
-    }
-
-    /// Save this model instance to the database
-    /// Uses `upsert: true` with `find_one_and_replace` using the _id field of the document as a filter
-    /// Updates the id field of this model instance with the new id from the database
-    async fn save(&mut self, db: &Db<Database>) -> Result<()> {
-        let collection = Self::collection(db);
-
-        let mut write_concern = Self::write_concern().unwrap_or_default();
-        write_concern.journal = Some(true);
-
-        let find_options = FindOneAndReplaceOptions::builder()
-            .upsert(Some(true))
-            .write_concern(Some(write_concern))
-            .return_document(Some(ReturnDocument::After))
-            .build();
-
-        let id: Result<Bson> = self.id().try_into();
-        let filter = match &self.id().inner {
-            Some(_) => bson::doc! { "_id": id? },
-            None => bson::doc! {},
-        };
-
-        let model = collection
-            .find_one_and_replace(filter, &(*self), Some(find_options))
-            .await?
-            .ok_or(MustyError::MongoServerFailedToReturnUpdatedDoc)?;
-
-        let updated_oid = model.id().clone();
-        self.set_id(updated_oid);
-        Ok(())
     }
 
     /// Delete this model instance from the database

@@ -7,6 +7,10 @@ pub trait Backend: Send + Sync + Sized {
     where
         I: IdType,
         C: Context<I, Self> + Model<I> + 'static;
+    async fn save_model<C, I>(&self, model: &mut C) -> Result<()>
+    where
+        I: IdType,
+        C: Context<I, Self> + Model<I> + 'static;
 }
 
 #[cfg(feature = "mongodb")]
