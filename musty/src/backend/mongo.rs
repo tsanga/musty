@@ -66,7 +66,7 @@ impl Backend for Database {
             let updated_oid = updated_model.id().clone();
             model.set_id(updated_oid);
 
-            Ok(())   
+            Ok(())
         } else {
             Err(MustyError::Other(anyhow::anyhow!(
                 "Could not save model: no collection found"

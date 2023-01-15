@@ -17,7 +17,7 @@ where
     }
 }
 
-/* 
+/*
 #[cfg(feature = "mongodb")]
 impl From<mongodb::Database> for Db<mongodb::Database> {
     fn from(db: mongodb::Database) -> Self {

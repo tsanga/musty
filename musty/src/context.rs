@@ -1,7 +1,14 @@
-use crate::{Result, prelude::{Backend, IdType}};
+use crate::{
+    prelude::{Backend, IdType},
+    Result,
+};
 use std::any::Any;
 
-pub trait Context<I, T>: Send + Sync where T: Backend, I: IdType {
+pub trait Context<I, T>: Send + Sync
+where
+    T: Backend,
+    I: IdType,
+{
     type Output: Any + Clone + Send + Sync;
 
     fn contextualize(context: &T) -> Self::Output;

@@ -22,7 +22,7 @@ pub async fn main() -> musty::Result<()> {
         id: ObjectId::new().into(),
         name: String::from("jonah"),
     };
-    
+
     user.save(&db).await?;
 
     // Get the user from the collection by name
