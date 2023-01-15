@@ -37,12 +37,19 @@ where
         db.inner.get_model_by_id(&id.into()).await
     }
 
-    async fn save<B>(&mut self, db: &Db<B>) -> Result<()>
+    async fn save<B>(&mut self, db: &Db<B>) -> Result<bool>
     where
         Self: Context<I, B> + 'static,
         B: Backend,
     {
-        db.inner.save_model(self).await?;
-        Ok(())
+        db.inner.save_model(self).await
+    }
+
+    async fn delete<B>(&mut self, db: &Db<B>) -> Result<bool>
+    where
+        Self: Context<I, B> + 'static,
+        B: Backend,
+    {
+        db.inner.delete_model(self).await
     }
 }

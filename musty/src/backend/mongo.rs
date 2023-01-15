@@ -36,7 +36,7 @@ impl Backend for Database {
     /// Save this model instance to the database
     /// Uses `upsert: true` with `find_one_and_replace` using the _id field of the document as a filter
     /// Updates the id field of this model instance with the new id from the database
-    async fn save_model<C, I>(&self, model: &mut C) -> Result<()>
+    async fn save_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
         I: IdType,
         C: Context<I, Self> + Model<I> + 'static,
@@ -66,10 +66,34 @@ impl Backend for Database {
             let updated_oid = updated_model.id().clone();
             model.set_id(updated_oid);
 
-            Ok(())
+            Ok(false)
         } else {
             Err(MustyError::Other(anyhow::anyhow!(
                 "Could not save model: no collection found"
+            )))
+        }
+    }
+
+    async fn delete_model<C, I>(&self, model: &mut C) -> Result<bool>
+    where
+        I: IdType,
+        C: Context<I, Self> + Model<I> + 'static,
+    {
+        let id = model.id();
+        if id.is_none() {
+            return Err(MustyError::MongoModelIdRequiredForOperation);
+        }
+
+        if let Ok(collection) = C::contextualize_boxed_downcast::<Collection<C>>(&self) {
+            let id: Result<Bson> = id.try_into();
+            collection
+                .delete_one(bson::doc! { "_id": id? }, None)
+                .await
+                .map(|res| res.deleted_count > 0)
+                .map_err(|e| e.into())
+        } else {
+            Err(MustyError::Other(anyhow::anyhow!(
+                "Could not delete model: no collection found"
             )))
         }
     }
@@ -222,20 +246,6 @@ where
     {
         Ok(Self::collection(db)
             .delete_many(filter.into(), options)
-            .await?)
-    }
-
-    /// Delete this model instance from the database
-    /// Errors if this model instance does not have an id set
-    async fn delete(&self, db: &Db<Database>) -> Result<mongodb::results::DeleteResult> {
-        let id = self.id();
-        if id.is_none() {
-            return Err(MustyError::MongoModelIdRequiredForOperation);
-        }
-
-        let id: Result<Bson> = id.try_into();
-        Ok(Self::collection(db)
-            .delete_one(bson::doc! { "_id": id? }, None)
             .await?)
     }
 }

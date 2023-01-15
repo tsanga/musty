@@ -7,7 +7,11 @@ pub trait Backend: Send + Sync + Sized {
     where
         I: IdType,
         C: Context<I, Self> + Model<I> + 'static;
-    async fn save_model<C, I>(&self, model: &mut C) -> Result<()>
+    async fn save_model<C, I>(&self, model: &mut C) -> Result<bool>
+    where
+        I: IdType,
+        C: Context<I, Self> + Model<I> + 'static;
+    async fn delete_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
         I: IdType,
         C: Context<I, Self> + Model<I> + 'static;
