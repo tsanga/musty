@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
-use mongodb::{options::ClientOptions, Client};
 use bson::{doc, Bson};
+use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MyId(pub String);
@@ -33,7 +33,10 @@ pub async fn main() -> musty::Result<()> {
     let db = Musty::new(client.database("musty"));
 
     // Insert a user into the collection
-    let mut user = User { id: MyId("hello".to_string()).into(), name: String::from("jonah") };
+    let mut user = User {
+        id: MyId("hello".to_string()).into(),
+        name: String::from("jonah"),
+    };
     user.save(&db).await?;
 
     // Get the user from the collection by id

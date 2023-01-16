@@ -75,7 +75,7 @@ pub(crate) fn expand_mongo_fields_impl(meta: &MetaModelDerive) -> proc_macro2::T
 
                 let func = quote! {
                     pub async fn #get_by_field_name(db: &musty::prelude::Musty<musty::mongodb::Database>, #field_ident: #field_type) -> musty::Result<Option<Self>> {
-                        Ok(Self::find_one(db, musty::bson::doc! { #field_name: #field_ident }, None).await?)
+                        Ok(Self::find_one(db, musty::bson::doc! { #field_name: #field_ident }).await?)
                     }
                 };
                 field_impls.push(func);
