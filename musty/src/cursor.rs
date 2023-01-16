@@ -1,6 +1,6 @@
 use futures::Stream;
 
-use crate::{id::IdType, prelude::Model};
+use crate::{id::IdGuard, prelude::Model};
 
 /// A simple wrapper for the cursor for musty models.
 /// Used when finding multiple models
@@ -8,7 +8,7 @@ use crate::{id::IdType, prelude::Model};
 pub trait MustyCursor<I, M>
 where
     Self: Unpin + Stream + Sized,
-    I: IdType,
+    I: IdGuard,
     M: Model<I>,
 {
 }

@@ -1,13 +1,12 @@
 use crate::prelude::Backend;
 
-/// The database type that musty uses.
-/// For `mongodb` feature usages, this type will be `Db<mongodb::Database>`
-/// This is a simple wrapper type to allow support for databases other than MongoDB in the future.
+/// Wrapper struct for a database connection.
 pub struct Db<T: Backend> {
     pub(crate) inner: T,
 }
 
 #[cfg(feature = "mongodb")]
+#[cfg_attr(docsrs, doc(cfg(feature = "mongodb")))]
 impl<T: Backend> Db<T>
 where
     T: Into<mongodb::Database>,

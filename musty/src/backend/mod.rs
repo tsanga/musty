@@ -1,26 +1,27 @@
 #[cfg(feature = "mongodb")]
 mod mongo;
 
+/// Exposes basic database-agnostic model operations.
 #[async_trait]
 pub trait Backend: Send + Sync + Sized {
     type Filter: Send + Sync;
 
     async fn get_model_by_id<C, I>(&self, id: &Id<C, I>) -> Result<Option<C>>
     where
-        I: IdType,
+        I: IdGuard,
         C: Context<I, Self> + Model<I> + 'static;
     async fn save_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
-        I: IdType,
+        I: IdGuard,
         C: Context<I, Self> + Model<I> + 'static;
     async fn delete_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
-        I: IdType,
+        I: IdGuard,
         C: Context<I, Self> + Model<I> + 'static;
 
     async fn find_one<C, I, F>(&self, filter: F) -> Result<Option<C>>
     where
-        I: IdType,
+        I: IdGuard,
         C: Context<I, Self> + Model<I> + 'static,
         F: Into<Self::Filter> + Send + Sync;
 }
@@ -30,5 +31,5 @@ pub use mongo::MongoModel;
 
 use async_trait::async_trait;
 
-use crate::prelude::{Context, Id, IdType, Model};
+use crate::prelude::{Context, Id, IdGuard, Model};
 use crate::Result;
