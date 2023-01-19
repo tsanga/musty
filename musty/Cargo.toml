@@ -1,6 +1,6 @@
 [package]
 name = "musty"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 authors = ["Alex Adewole <alex@bizar.re>", "Jonah Seguin <me@jonahseguin.com>"]
 readme = "../README.md"
@@ -21,6 +21,7 @@ thiserror = "1"
 musty-proc-macro = { path = "../musty-proc-macro", version = "0.3.0" }
 anyhow = "1"
 futures = "0.3"
+async-graphql = { version = "5", default-features = false, optional = true  }
 
 [dev-dependencies]
 tokio = { version = "1" }
@@ -28,6 +29,7 @@ serde_json = "1"
 
 [features]
 default = ["mongodb", "bson", "mongodb/tokio-runtime"]
+graphql = ["dep:async-graphql"]
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]

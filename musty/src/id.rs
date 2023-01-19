@@ -105,6 +105,26 @@ impl<'de, M: Model, I: IdGuard> Deserialize<'de> for Id<M, I> {
     }
 }
 
+#[cfg(feature = "graphql")]
+#[cfg_attr(docsrs, doc(cfg(feature = "graphql")))]
+mod graphql {
+    use async_graphql::*;
+
+    use crate::Model;
+    use super::{Id, IdGuard};
+
+    #[Scalar]
+    impl<M, I> ScalarType for Id<M, I> where M: Model, I: IdGuard {
+        fn parse(value: Value) -> InputValueResult<Self> {
+            Ok(async_graphql::from_value(value)?)
+        }
+
+        fn to_value(&self) -> Value {
+            async_graphql::to_value(self).unwrap_or_else(|_| Value::Null)
+        }
+    }
+}
+
 #[cfg(feature = "bson")]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "bson", feature = "mongodb"))))]
 mod bson {
