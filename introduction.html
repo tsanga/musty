@@ -80,7 +80,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="quick-start.html"><strong aria-hidden="true">2.</strong> Quick Start</a></li><li class="chapter-item expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Database</a></li><li class="chapter-item expanded "><a href="model.html"><strong aria-hidden="true">4.</strong> Model</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="model-id.html"><strong aria-hidden="true">4.1.</strong> Identifiers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="model-db-id.html"><strong aria-hidden="true">4.1.1.</strong> DB-generated identifiers</a></li></ol></li><li class="chapter-item expanded "><a href="model-creating.html"><strong aria-hidden="true">4.2.</strong> Creating</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Database</a></li><li class="chapter-item expanded "><a href="model.html"><strong aria-hidden="true">4.</strong> Model</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="model-id.html"><strong aria-hidden="true">4.1.</strong> Identifiers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="model-db-id.html"><strong aria-hidden="true">4.1.1.</strong> DB-generated identifiers</a></li></ol></li><li class="chapter-item expanded "><a href="model-creating.html"><strong aria-hidden="true">4.2.</strong> Creating</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -152,19 +152,30 @@
 </blockquote>
 <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
 <p><strong>musty</strong> is an asynchronous <a href="https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping">object-document mapper</a> library for Rust. It turns your <code>struct</code>'s into queryable database models.</p>
-<h3 id="benefits"><a class="header" href="#benefits">Benefits</a></h3>
+<h3 id="features"><a class="header" href="#features">Features</a></h3>
 <ul>
-<li></li>
+<li>Typed model filter/querying language via <code>filter!()</code> macro.</li>
+<li>Support for multiple different database backends.</li>
+<li>Automatically handles serializing, deserializing, id mapping, &amp; more.</li>
+<li>Straight-forward integration, requiring little change to your data structs.</li>
+<li>Focus on extendability, underlying database driver is always available for advanced querying.</li>
+<li>Easily define indexes and dynamic <code>get_by</code> functions using the <code>#[musty()]</code> macro.</li>
 </ul>
-<p><strong>musty</strong> focuses primarily on <a href="https://github.com/mongodb/mongo">MongoDB</a>, but the underlying types make it fairly straight-forward to implement support for other database backends.</p>
-<h3 id="motivation"><a class="header" href="#motivation">Motivation</a></h3>
+<h3 id="why-use-musty"><a class="header" href="#why-use-musty">Why use <code>musty</code>?</a></h3>
+<ul>
+<li>Spend less time building an ODM and more time building your app.</li>
+<li>Leverage typed database-agnostic document queries using the <code>filter!()</code> macro.</li>
+<li>Ability to switch to a different database backend down the line with little to no code changes.</li>
+</ul>
+<h3 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h3>
+<p><strong>musty</strong> is designed to integrate with little friction (i.e: not enforcing specific types to be used, etc), for how to get started using <code>musty</code>, check out the <a href="./quickstart.html">quick start</a>.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
 
-                            <a rel="next" href="quick-start.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="quickstart.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -175,7 +186,7 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
 
-                    <a rel="next" href="quick-start.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="quickstart.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
