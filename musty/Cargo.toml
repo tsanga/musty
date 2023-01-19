@@ -1,6 +1,6 @@
 [package]
 name = "musty"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
 authors = ["Alex Adewole <alex@bizar.re>", "Jonah Seguin <me@jonahseguin.com>"]
 readme = "../README.md"
@@ -28,3 +28,10 @@ serde_json = "1"
 
 [features]
 default = ["mongodb", "bson", "mongodb/tokio-runtime"]
+
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]

@@ -13,7 +13,7 @@ struct User {
 pub async fn main() -> musty::Result<()> {
     let client_options = ClientOptions::parse("mongodb://localhost:27017").await?;
     let client = Client::with_options(client_options)?;
-    let db = Musty::new(client.database("musty"));
+    let db = client.database("musty").into();
 
     // Insert some users into the collection
     let mut user_jonah = User {

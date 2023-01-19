@@ -1,7 +1,7 @@
 # Summary
 
 - [Introduction](./introduction.md)
-- [Quick Start](./quick-start.md)
+- [Quickstart](./quickstart.md)
 - [Database](./database.md)
 - [Model](./model.md)
   - [Identifiers](./model-id.md)

@@ -2,32 +2,32 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{db::Db, Result};
 
-use crate::prelude::{Backend, Context, Id, IdType};
+use crate::prelude::{Backend, Context, Id, IdGuard};
 
 use async_trait::async_trait;
 
-/// The root model type for musty models
-/// Automatically derived by `musty-proc-macro` using the `#[model]` attribute
-/// Using the `#[model]` attribute will also automatically change your `id` field to conform to musty's `Id` type:
-/// `Id<Self, I>` where `I` is the type of your `id` field
-/// If you have the `mongodb` featue enabled, you can use the `#[model(mongo)]` attribute to automatically derive `MongoModel`
+/// Exposes basic database operations for a model.
+///
+/// This trait is database-agnostic and only exposes basic database operations.
+/// More complex database-specific operations are implemented in other traits, such as [`MongoModel`](crate::prelude::MongoModel).
+///
+/// Most of the time you should not need to implement this trait yourself. Instead, use the [`model`](crate::prelude::macro) macro.
+/// Ideally, you should try to use only the generic operations provided by this trait, and avoid using database-specific operations unless absolutely necessary.
+///
+#[doc = include_str!("../docs/model-macro.md")]
 #[async_trait]
 pub trait Model<I>
 where
     Self: Sized + Send + Sync + Serialize + DeserializeOwned + Unpin,
-    I: IdType,
+    I: IdGuard,
 {
-    /// The id of your model
-    /// For MongoDB implementations, this is the `_id` field
-    /// When using the `mongodb` feature with the `#[model(mongo)]` attribute, this field will be automatically changed to `Id<Self, I>`
-    /// and renamed to `_id`.  This field will also skip serializing if the inner value is `None`
-    /// This function is automatically implemented when using the `#[model]` attribute macro
+    /// Get the ID of this model.
     fn id(&self) -> &Id<Self, I>;
 
-    /// Set the id of your model
-    /// This function is automatically implemented when using the `#[model]` attribute macro
+    /// Set the ID of this model.
     fn set_id(&mut self, id: Id<Self, I>);
 
+    /// Get a model by its ID from a database.
     async fn get_by_id<B, T>(db: &Db<B>, id: T) -> Result<Option<Self>>
     where
         Self: Context<I, B> + 'static,
@@ -37,6 +37,7 @@ where
         db.inner.get_model_by_id(&id.into()).await
     }
 
+    /// Save this model to a database.
     async fn save<B>(&mut self, db: &Db<B>) -> Result<bool>
     where
         Self: Context<I, B> + 'static,
@@ -45,6 +46,7 @@ where
         db.inner.save_model(self).await
     }
 
+    /// Delete this model from a database.
     async fn delete<B>(&mut self, db: &Db<B>) -> Result<bool>
     where
         Self: Context<I, B> + 'static,
@@ -53,6 +55,7 @@ where
         db.inner.delete_model(self).await
     }
 
+    /// Find a single model from a database by a filter.
     async fn find_one<B>(db: &Db<B>, filter: B::Filter) -> Result<Option<Self>>
     where
         Self: Context<I, B> + 'static,

@@ -6,15 +6,15 @@ use futures::Stream;
 use mongodb::{
     options::{
         CollectionOptions, DeleteOptions, FindOneAndDeleteOptions, FindOneAndReplaceOptions,
-        FindOneAndUpdateOptions, FindOptions, ReadConcern, ReturnDocument,
-        SelectionCriteria, UpdateModifications, WriteConcern,
+        FindOneAndUpdateOptions, FindOptions, ReadConcern, ReturnDocument, SelectionCriteria,
+        UpdateModifications, WriteConcern,
     },
     results::DeleteResult,
     Collection, Database,
 };
 
 use crate::{db::Db, model::Model, prelude::Context};
-use crate::{error::MustyError, id::IdType, prelude::Id, Result};
+use crate::{error::MustyError, id::IdGuard, prelude::Id, Result};
 
 use super::Backend;
 
@@ -24,7 +24,7 @@ impl Backend for Database {
 
     async fn get_model_by_id<C, I>(&self, id: &Id<C, I>) -> Result<Option<C>>
     where
-        I: IdType,
+        I: IdGuard,
         C: Context<I, Self> + Model<I> + 'static,
     {
         if let Ok(collection) = C::contextualize_boxed_downcast::<Collection<C>>(&self) {
@@ -40,7 +40,7 @@ impl Backend for Database {
     /// Updates the id field of this model instance with the new id from the database
     async fn save_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
-        I: IdType,
+        I: IdGuard,
         C: Context<I, Self> + Model<I> + 'static,
     {
         if let Ok(collection) = C::contextualize_boxed_downcast::<Collection<C>>(&self) {
@@ -78,7 +78,7 @@ impl Backend for Database {
 
     async fn delete_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
-        I: IdType,
+        I: IdGuard,
         C: Context<I, Self> + Model<I> + 'static,
     {
         let id = model.id();
@@ -102,7 +102,7 @@ impl Backend for Database {
 
     async fn find_one<C, I, F>(&self, filter: F) -> Result<Option<C>>
     where
-        I: IdType,
+        I: IdGuard,
         C: Context<I, Self> + Model<I> + 'static,
         F: Into<Self::Filter> + Send + Sync,
     {
@@ -123,7 +123,7 @@ impl Backend for Database {
 impl<I, M> Context<I, Database> for M
 where
     M: MongoModel<I> + 'static,
-    I: IdType + Into<bson::Bson>,
+    I: IdGuard + Into<bson::Bson>,
 {
     type Output = Collection<Self>;
 
@@ -132,10 +132,9 @@ where
     }
 }
 
-/// The model implementation used by models which use MongoDB as a backend.
-/// Automatically implemented when using `#[model(mongo)]` on a model.
+/// Exposes MongoDB operations for a model.
 #[async_trait]
-pub trait MongoModel<I: IdType>
+pub trait MongoModel<I: IdGuard>
 where
     Self: Model<I>,
 {
@@ -263,7 +262,7 @@ where
 
 pub struct MongoCursor<I, M>
 where
-    I: IdType,
+    I: IdGuard,
     M: Model<I>,
 {
     cursor: mongodb::Cursor<M>,
@@ -272,14 +271,14 @@ where
 
 impl<I, M> Unpin for MongoCursor<I, M>
 where
-    I: IdType,
+    I: IdGuard,
     M: Model<I>,
 {
 }
 
 impl<I, M> MongoCursor<I, M>
 where
-    I: IdType,
+    I: IdGuard,
     M: Model<I>,
 {
     pub fn new(cursor: mongodb::Cursor<M>) -> Self {
@@ -292,7 +291,7 @@ where
 
 impl<I, M> Stream for MongoCursor<I, M>
 where
-    I: IdType,
+    I: IdGuard,
     M: Model<I>,
 {
     type Item = Result<M>;

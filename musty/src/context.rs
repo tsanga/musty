@@ -1,13 +1,14 @@
 use crate::{
-    prelude::{Backend, IdType},
+    prelude::{Backend, IdGuard},
     Result,
 };
 use std::any::Any;
 
+/// Allows for contextualization of a database connection.
 pub trait Context<I, T>: Send + Sync
 where
     T: Backend,
-    I: IdType,
+    I: IdGuard,
 {
     type Output: Any + Clone + Send + Sync;
 

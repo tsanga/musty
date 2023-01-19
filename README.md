@@ -1,38 +1,20 @@
-# musty
-
-**An ODM for your favourite NoSQL database.**
-
 **musty** is an asynchronous [object-document mapper](https://en.wikipedia.org/wiki/Object–relational_mapping) library for Rust. It turns your `struct`'s into queryable database models.
 
-## example
+### Features
 
-```rust
-use mongodb::{options::ClientOptions, Client};
-use bson::{oid::ObjectId, doc};
-use musty::prelude::*;
+- Typed model filter/querying language via `filter!()` macro.
+- Support for multiple different database backends.
+- Automatically handles serializing, deserializing, id mapping, & more.
+- Straight-forward integration, requiring little change to your data structs.
+- Focus on extendability, underlying database driver is always available for advanced querying.
+- Easily define indexes and dynamic `get_by` functions using the `#[musty()]` macro.
 
-#[model(mongo(collection = "users"))]
-struct User {
-    id: ObjectId,
-    name: String,
-}
+### Why use `musty`?
 
-#[tokio::main]
-pub async fn main() -> Result<()> {
-    let client_options = ClientOptions::parse("mongodb://localhost:27017").await?;
-    let client = Client::with_options(client_options)?;
-    let db = Musty::new(client.database("musty"));
+- Spend less time building an ODM and more time building your app.
+- Leverage typed database-agnostic document queries using the `filter!()` macro.
+- Ability to switch to a different database backend down the line with little to no code changes.
 
-    let mut user = User { id: ObjectId::new().into(), name: String::from("jonah") };
-    user.save(&db).await?;
+### Getting Started
 
-    let mut cursor = User::find(&db, None, None).await?;
-    while let Some(user) = cursor.next().await {
-        println!("{:?}", user?);
-    }
-
-    Ok(())
-}
-
-
-```
+**musty** is designed to integrate with little friction (i.e: not enforcing specific types to be used, etc), for how to get started using `musty`, check out the [quick start](./docs/src/quickstart.md).
