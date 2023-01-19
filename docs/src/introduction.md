@@ -9,7 +9,7 @@
 - Typed model filter/querying language via `filter!()` macro.
 - Support for multiple different database backends.
 - Automatically handles serializing, deserializing, id mapping, & more.
-- Straight-forward integration, requiring no changes to your data structs.
+- Straight-forward integration, requiring little change to your data structs.
 - Focus on extendability, underlying database driver is always available for advanced querying.
 - Easily define indexes and dynamic `get_by` functions using the `#[musty()]` macro.
 

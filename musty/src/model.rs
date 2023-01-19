@@ -7,7 +7,14 @@ use crate::prelude::{Backend, Context, Id, IdGuard};
 use async_trait::async_trait;
 
 /// Exposes basic database operations for a model.
-#[doc = include_str!("../docs/model-implementing.md")]
+///
+/// This trait is database-agnostic and only exposes basic database operations.
+/// More complex database-specific operations are implemented in other traits, such as [`MongoModel`](crate::prelude::MongoModel).
+///
+/// Most of the time you should not need to implement this trait yourself. Instead, use the [`model`](crate::prelude::macro) macro.
+/// Ideally, you should try to use only the generic operations provided by this trait, and avoid using database-specific operations unless absolutely necessary.
+///
+#[doc = include_str!("../docs/model-macro.md")]
 #[async_trait]
 pub trait Model<I>
 where

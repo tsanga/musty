@@ -6,8 +6,8 @@ use futures::Stream;
 use mongodb::{
     options::{
         CollectionOptions, DeleteOptions, FindOneAndDeleteOptions, FindOneAndReplaceOptions,
-        FindOneAndUpdateOptions, FindOptions, ReadConcern, ReturnDocument,
-        SelectionCriteria, UpdateModifications, WriteConcern,
+        FindOneAndUpdateOptions, FindOptions, ReadConcern, ReturnDocument, SelectionCriteria,
+        UpdateModifications, WriteConcern,
     },
     results::DeleteResult,
     Collection, Database,

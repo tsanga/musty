@@ -20,10 +20,10 @@ pub type Result<T> = std::result::Result<T, error::MustyError>;
 
 pub use error::MustyError;
 
-pub use model::Model;
 #[cfg(feature = "mongodb")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mongodb")))]
 pub use backend::MongoModel;
+pub use model::Model;
 
 /// Exports needed to use musty.
 pub mod prelude {
@@ -32,9 +32,9 @@ pub mod prelude {
     pub use crate::db::Db as Musty;
     pub use crate::error::MustyError;
     pub use crate::id::DefaultType as DefaultIdType;
+    pub use crate::id::GeneratedIdGuard;
     pub use crate::id::Id;
     pub use crate::id::IdGuard;
-    pub use crate::id::GeneratedIdGuard;
     pub use crate::model::Model;
     #[doc(hidden)]
     pub use async_trait::async_trait;
