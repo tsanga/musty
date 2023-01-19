@@ -5,18 +5,12 @@ use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct MyId(pub String);
 
 impl Display for MyId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
-    }
-}
-
-impl From<MyId> for Bson {
-    fn from(id: MyId) -> Self {
-        Bson::String(id.0)
     }
 }
 

@@ -123,7 +123,7 @@ impl Backend for Database {
 impl<I, M> Context<I, Database> for M
 where
     M: MongoModel + 'static,
-    I: IdGuard + Into<bson::Bson>,
+    I: IdGuard,
 {
     type Output = Collection<Self>;
 
