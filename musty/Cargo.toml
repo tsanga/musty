@@ -8,7 +8,7 @@ repository = "https://github.com/tsanga/musty"
 license = "MIT"
 description = "An ODM for NoSQL databases like MongoDB"
 categories = ["database", "data-structures"]
-keywords = ["mongodb", "database", "bson", "odm"]
+keywords = ["mongodb", "database", "bson", "odm", "nosql"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

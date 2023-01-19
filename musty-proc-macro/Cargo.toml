@@ -2,6 +2,11 @@
 name = "musty-proc-macro"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["Alex Adewole <alex@bizar.re>", "Jonah Seguin <me@jonahseguin.com>"]
+description = "An ODM for NoSQL databases like MongoDB"
+categories = ["database", "data-structures"]
+keywords = ["mongodb", "database", "bson", "odm", "nosql"]
 
 [lib]
 proc-macro = true
