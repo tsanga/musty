@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, pin::Pin, task::Poll};
+use std::{pin::Pin, task::Poll};
 
 use async_trait::async_trait;
 use bson::{Bson, Document};
@@ -25,7 +25,7 @@ impl Backend for Database {
     async fn get_model_by_id<C, I>(&self, id: &Id<C, I>) -> Result<Option<C>>
     where
         I: IdGuard,
-        C: Context<I, Self> + Model<I> + 'static,
+        C: Context<I, Self> + Model + 'static,
     {
         if let Ok(collection) = C::contextualize_boxed_downcast::<Collection<C>>(&self) {
             let id: Result<Bson> = id.try_into();
@@ -41,7 +41,7 @@ impl Backend for Database {
     async fn save_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
         I: IdGuard,
-        C: Context<I, Self> + Model<I> + 'static,
+        C: Context<I, Self> + Model + 'static,
     {
         if let Ok(collection) = C::contextualize_boxed_downcast::<Collection<C>>(&self) {
             // todo: copy write concern over from collection options, probably by using tuple above instead of just collection
@@ -79,7 +79,7 @@ impl Backend for Database {
     async fn delete_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
         I: IdGuard,
-        C: Context<I, Self> + Model<I> + 'static,
+        C: Context<I, Self> + Model + 'static,
     {
         let id = model.id();
         if id.is_none() {
@@ -103,7 +103,7 @@ impl Backend for Database {
     async fn find_one<C, I, F>(&self, filter: F) -> Result<Option<C>>
     where
         I: IdGuard,
-        C: Context<I, Self> + Model<I> + 'static,
+        C: Context<I, Self> + Model + 'static,
         F: Into<Self::Filter> + Send + Sync,
     {
         let filter = filter.into();
@@ -122,7 +122,7 @@ impl Backend for Database {
 
 impl<I, M> Context<I, Database> for M
 where
-    M: MongoModel<I> + 'static,
+    M: MongoModel + 'static,
     I: IdGuard + Into<bson::Bson>,
 {
     type Output = Collection<Self>;
@@ -134,9 +134,9 @@ where
 
 /// Exposes MongoDB operations for a model.
 #[async_trait]
-pub trait MongoModel<I: IdGuard>
+pub trait MongoModel
 where
-    Self: Model<I>,
+    Self: Model,
 {
     /// The collection name for this model
     /// Automatically implemented
@@ -189,7 +189,7 @@ where
     /// Returns a `MongoCursor` which can be used to iterate over the results
     /// Use `futures::StreamExt` to iterate over the results using
     /// `while let Some(result) = cursor.next().await {}`
-    async fn find<F, O>(db: &Db<Database>, filter: F, options: O) -> Result<MongoCursor<I, Self>>
+    async fn find<F, O>(db: &Db<Database>, filter: F, options: O) -> Result<MongoCursor<Self>>
     where
         F: Into<Option<Document>> + Send,
         O: Into<Option<FindOptions>> + Send,
@@ -260,39 +260,33 @@ where
     }
 }
 
-pub struct MongoCursor<I, M>
+pub struct MongoCursor<M>
 where
-    I: IdGuard,
-    M: Model<I>,
+    M: Model,
 {
     cursor: mongodb::Cursor<M>,
-    _marker: PhantomData<I>,
 }
 
-impl<I, M> Unpin for MongoCursor<I, M>
+impl<M> Unpin for MongoCursor<M>
 where
-    I: IdGuard,
-    M: Model<I>,
+    M: Model,
 {
 }
 
-impl<I, M> MongoCursor<I, M>
+impl<M> MongoCursor<M>
 where
-    I: IdGuard,
-    M: Model<I>,
+    M: Model,
 {
     pub fn new(cursor: mongodb::Cursor<M>) -> Self {
         Self {
             cursor,
-            _marker: PhantomData,
         }
     }
 }
 
-impl<I, M> Stream for MongoCursor<I, M>
+impl<M> Stream for MongoCursor<M>
 where
-    I: IdGuard,
-    M: Model<I>,
+    M: Model,
 {
     type Item = Result<M>;
 

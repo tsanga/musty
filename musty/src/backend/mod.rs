@@ -9,20 +9,20 @@ pub trait Backend: Send + Sync + Sized {
     async fn get_model_by_id<C, I>(&self, id: &Id<C, I>) -> Result<Option<C>>
     where
         I: IdGuard,
-        C: Context<I, Self> + Model<I> + 'static;
+        C: Context<I, Self> + Model + 'static;
     async fn save_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
         I: IdGuard,
-        C: Context<I, Self> + Model<I> + 'static;
+        C: Context<I, Self> + Model + 'static;
     async fn delete_model<C, I>(&self, model: &mut C) -> Result<bool>
     where
         I: IdGuard,
-        C: Context<I, Self> + Model<I> + 'static;
+        C: Context<I, Self> + Model + 'static;
 
     async fn find_one<C, I, F>(&self, filter: F) -> Result<Option<C>>
     where
         I: IdGuard,
-        C: Context<I, Self> + Model<I> + 'static,
+        C: Context<I, Self> + Model + 'static,
         F: Into<Self::Filter> + Send + Sync;
 }
 

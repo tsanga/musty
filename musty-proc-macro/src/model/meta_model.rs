@@ -141,7 +141,9 @@ impl MetaModelDerive {
 
         let mut model = quote! {
             #[automatically_derived]
-            impl musty::prelude::Model<#model_id_type> for #ident where Self: Sized {
+            impl musty::prelude::Model for #ident where Self: Sized {
+                type Id = #model_id_type;
+
                 fn id(&self) -> &Id<Self, #model_id_type> {
                     &self.id
                 }

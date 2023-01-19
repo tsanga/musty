@@ -24,6 +24,8 @@ pub async fn main() -> musty::Result<()> {
     };
     user.save(&db).await?;
 
+    <User as Model>::Id::new();
+
     // Get the user from the collection by name
     let user = User::find_one(&db, doc! { "name": "jonah" }).await?;
     println!("{:#?}", user);

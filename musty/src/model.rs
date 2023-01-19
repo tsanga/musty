@@ -16,22 +16,23 @@ use async_trait::async_trait;
 ///
 #[doc = include_str!("../docs/model-macro.md")]
 #[async_trait]
-pub trait Model<I>
+pub trait Model
 where
     Self: Sized + Send + Sync + Serialize + DeserializeOwned + Unpin,
-    I: IdGuard,
 {
+    type Id: IdGuard;
+
     /// Get the ID of this model.
-    fn id(&self) -> &Id<Self, I>;
+    fn id(&self) -> &Id<Self, Self::Id>;
 
     /// Set the ID of this model.
-    fn set_id(&mut self, id: Id<Self, I>);
+    fn set_id(&mut self, id: Id<Self, Self::Id>);
 
     /// Get a model by its ID from a database.
     async fn get_by_id<B, T>(db: &Db<B>, id: T) -> Result<Option<Self>>
     where
-        Self: Context<I, B> + 'static,
-        T: Into<Id<Self, I>> + Send + Sync,
+        Self: Context<Self::Id, B> + 'static,
+        T: Into<Id<Self, Self::Id>> + Send + Sync,
         B: Backend,
     {
         db.inner.get_model_by_id(&id.into()).await
@@ -40,7 +41,7 @@ where
     /// Save this model to a database.
     async fn save<B>(&mut self, db: &Db<B>) -> Result<bool>
     where
-        Self: Context<I, B> + 'static,
+        Self: Context<Self::Id, B> + 'static,
         B: Backend,
     {
         db.inner.save_model(self).await
@@ -49,7 +50,7 @@ where
     /// Delete this model from a database.
     async fn delete<B>(&mut self, db: &Db<B>) -> Result<bool>
     where
-        Self: Context<I, B> + 'static,
+        Self: Context<Self::Id, B> + 'static,
         B: Backend,
     {
         db.inner.delete_model(self).await
@@ -58,7 +59,7 @@ where
     /// Find a single model from a database by a filter.
     async fn find_one<B>(db: &Db<B>, filter: B::Filter) -> Result<Option<Self>>
     where
-        Self: Context<I, B> + 'static,
+        Self: Context<Self::Id, B> + 'static,
         B: Backend,
     {
         db.inner.find_one(filter).await
