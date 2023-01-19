@@ -18,7 +18,7 @@ bson = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 async-trait = "0.1"
 thiserror = "1"
-musty-proc-macro = { path = "../musty-proc-macro", version = "0.1.0" }
+musty-proc-macro = { path = "../musty-proc-macro", version = "0.3.0" }
 anyhow = "1"
 futures = "0.3"
 

@@ -20,6 +20,7 @@ pub(crate) struct MetaModelAttr {
 #[darling(attributes(musty))]
 pub(crate) struct MetaModelField {
     pub(crate) ident: Option<Ident>,
+    pub(crate) vis: syn::Visibility,
     pub(crate) ty: syn::Type,
     #[darling(default)]
     pub(crate) id: bool,
@@ -101,6 +102,7 @@ impl MetaModelDerive {
             .map(|field| {
                 let ident = field.ident.as_ref().unwrap();
                 let ty = &field.ty;
+                let vis = &field.vis;
                 let mut field_attr = quote! {};
                 if field.skip {
                     field_attr = quote! { #[serde(skip)] }
@@ -111,7 +113,7 @@ impl MetaModelDerive {
                 }
                 quote! {
                     #field_attr
-                    #ident: #ty
+                    #vis #ident: #ty
                 }
             });
 
