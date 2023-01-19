@@ -25,6 +25,8 @@ pub use error::MustyError;
 pub use backend::MongoModel;
 pub use model::Model;
 
+pub use crate::db::Db as Musty;
+
 /// Exports needed to use musty.
 pub mod prelude {
     pub use crate::backend::Backend;

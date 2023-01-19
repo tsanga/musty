@@ -1,6 +1,7 @@
 use crate::prelude::Backend;
 
 /// Wrapper struct for a database connection.
+#[derive(Clone)]
 pub struct Db<T: Backend> {
     pub(crate) inner: T,
 }
