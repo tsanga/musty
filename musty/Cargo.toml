@@ -1,6 +1,6 @@
 [package]
 name = "musty"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 authors = ["Alex Adewole <alex@bizar.re>", "Jonah Seguin <me@jonahseguin.com>"]
 readme = "../README.md"
@@ -18,7 +18,7 @@ bson = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 async-trait = "0.1"
 thiserror = "1"
-musty-proc-macro = { path = "../musty-proc-macro", version = "0.2.0" }
+musty-proc-macro = { path = "../musty-proc-macro", version = "0.2.1" }
 anyhow = "1"
 futures = "0.3"
 

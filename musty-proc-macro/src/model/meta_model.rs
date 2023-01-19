@@ -47,7 +47,7 @@ pub(crate) struct MetaModelDerive {
 
 impl MetaModelDerive {
     /// Get the type of the `id` field (or field with attribute #[musty(id)]) on the model struct
-    pub(crate) fn get_model_id_type(&self) -> Path {
+    pub(crate) fn get_model_id(&self) -> (Visibility, Path) {
         let ident = &self.ident;
         let data = &self.data;
 
@@ -64,14 +64,16 @@ impl MetaModelDerive {
             abort!(ident.span(), "{} must have an `id` field", ident);
         }
 
-        let path = match &id_field.unwrap().ty {
+        let id_field = id_field.unwrap();
+
+        let path = match &id_field.ty {
             Type::Path(TypePath { path, .. }) => path,
             _ => {
                 abort!(ident.span(), "{} `id` field must be path", ident)
             }
         };
 
-        return path.clone();
+        return (id_field.vis.clone(), path.clone());
     }
 
     /// Re-creates the struct for the Model that had the attribute #[model(...)] macro on it
@@ -79,6 +81,7 @@ impl MetaModelDerive {
     /// and required derives (Debug, serde::Serialize, serde::Deserialize)
     fn create_model_struct(
         &self,
+        id_vis: &Visibility,
         id_type: &Path,
         args: &MetaModelAttr,
     ) -> proc_macro2::TokenStream {
@@ -121,7 +124,7 @@ impl MetaModelDerive {
             #[derive(Debug, serde::Serialize, serde::Deserialize)]
             #vis struct #ident {
                 #id_attr
-                id: musty::prelude::Id<Self, #id_type>,
+                #id_vis id: musty::prelude::Id<Self, #id_type>,
                 #(#fields),*
             }
         }
@@ -133,8 +136,8 @@ impl MetaModelDerive {
     pub fn expand(self, args: MetaModelAttr) -> proc_macro::TokenStream {
         let ident = &self.ident;
 
-        let model_id_type = self.get_model_id_type();
-        let model_struct = self.create_model_struct(&model_id_type, &args);
+        let (model_id_vis, model_id_type) = self.get_model_id();
+        let model_struct = self.create_model_struct(&model_id_vis, &model_id_type, &args);
 
         let mut model = quote! {
             #[automatically_derived]

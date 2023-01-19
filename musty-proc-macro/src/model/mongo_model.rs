@@ -30,7 +30,7 @@ pub(crate) fn expand_mongo_model(
 ) -> proc_macro2::TokenStream {
     let ident = &meta.ident;
 
-    let model_id_type = meta.get_model_id_type();
+    let (_, model_id_type) = meta.get_model_id();
 
     let collection_name = mongo.collection.clone().unwrap_or_else(|| {
         ident
