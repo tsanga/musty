@@ -9,8 +9,7 @@ mod model;
 mod filter;
 mod util;
 
-/// The primary macro for deriving/codegening the `Model` and (optionally) `MongoModel` trait implementations and required attributes
-/// + id field on a Model struct
+/// Reconstructs model struct and derives `Model` (and database-specific model traits).
 /// 
 /// Usage:
 /// ```

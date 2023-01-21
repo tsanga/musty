@@ -1,4 +1,4 @@
-use crate::prelude::{Filter, ModelFilter, IdType, Id};
+use crate::{prelude::{Filter, ModelFilter, IdGuard, Id}, Model};
 
 #[derive(Debug, Clone)]
 pub enum FilterValue {
@@ -73,7 +73,7 @@ impl<T: ModelFilter> From<T> for FilterValue {
     }
 }
 
-impl<M, I: IdType> From<Id<M, I>> for FilterValue {
+impl<M: Model, I: IdGuard> From<Id<M, I>> for FilterValue {
     fn from(id: Id<M, I>) -> Self {
         Self::Id(id.inner.map(|i| i.to_string()))
     }

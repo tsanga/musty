@@ -1,4 +1,8 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc = include_str!("../README.md")]
+
 mod backend;
+mod context;
 mod cursor;
 mod db;
 mod error;
@@ -6,33 +10,42 @@ mod id;
 mod model;
 pub mod filter;
 
+#[cfg(feature = "bson")]
+pub use bson;
 /// Re-exports
 #[cfg(feature = "mongodb")]
 pub use mongodb;
-#[cfg(feature = "bson")]
-pub use bson;
 
-/// Exports
+/// Result type used by musty.
 pub type Result<T> = std::result::Result<T, error::MustyError>;
 
-/// Exports needed to use musty
-/// use musty::prelude::*;
+pub use error::MustyError;
+
+#[cfg(feature = "mongodb")]
+#[cfg_attr(docsrs, doc(cfg(feature = "mongodb")))]
+pub use backend::MongoModel;
+pub use model::Model;
+
+pub use crate::db::Db as Musty;
+
+/// Exports needed to use musty.
 pub mod prelude {
     // Db
+    pub use crate::backend::Backend;
+    pub use crate::context::Context;
     pub use crate::db::Db as Musty;
-    pub use crate::db::Identifiable;
-
-    // Error
     pub use crate::error::MustyError;
 
     // Id
     pub use crate::id::DefaultType as DefaultIdType;
+    pub use crate::id::GeneratedIdGuard;
     pub use crate::id::Id;
-    pub(crate) use crate::id::IdType;
+    pub use crate::id::IdGuard;
 
     // Model
     pub use crate::model::Model;
     #[cfg(feature = "mongodb")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "mongodb")))]
     pub use crate::backend::MongoModel;
 
     // Filter
@@ -40,5 +53,6 @@ pub mod prelude {
 
     // Macros
     pub use musty_proc_macro::*;
+    #[doc(hidden)]
     pub use async_trait::async_trait;
 }

@@ -1,11 +1,9 @@
 use darling::{FromDeriveInput, FromField, FromMeta};
-
 use proc_macro2::Span;
 use proc_macro_error::abort;
 use quote::quote;
 use syn::{Ident, Path, Type, TypePath, Visibility, Attribute};
-
-use super::mongo_model::ModelMongoAttrs;
+use super::mongo_model::{ModelMongoAttrs, MustyMongoFieldAttrs};
 
 /// Attributes for a model struct:
 /// #[model(mongo(...))]
@@ -38,14 +36,8 @@ pub(crate) struct MetaModelField {
     /// generates:
     /// `pub async fn get_by_name(db, name) -> Result<Option<Self>>`
     #[darling(default)]
-    pub(crate) get: Option<MetaModelFieldGetAttrs>,
+    pub(crate) mongo: Option<MustyMongoFieldAttrs>,
     pub(crate) attrs: Vec<Attribute>,
-}
-
-#[derive(Default, FromMeta)]
-pub(crate) struct MetaModelFieldGetAttrs {
-    #[darling(default)]
-    pub(crate) name: Option<String>,
 }
 
 /// The root derive type for a model struct
@@ -60,7 +52,7 @@ pub(crate) struct MetaModelDerive {
 
 impl MetaModelDerive {
     /// Get the type of the `id` field (or field with attribute #[musty(id)]) on the model struct
-    pub(crate) fn get_model_id_type(&self) -> Path {
+    pub(crate) fn get_model_id(&self) -> (Visibility, Path) {
         let ident = &self.ident;
         let data = &self.data;
 
@@ -77,25 +69,16 @@ impl MetaModelDerive {
             abort!(ident.span(), "{} must have an `id` field", ident);
         }
 
-        let path = match &id_field.unwrap().ty {
+        let id_field = id_field.unwrap();
+
+        let path = match &id_field.ty {
             Type::Path(TypePath { path, .. }) => path,
             _ => {
                 abort!(ident.span(), "{} `id` field must be path", ident)
             }
         };
 
-        return path.clone();
-    }
-
-    pub(crate) fn get_fields(&self) -> Vec<&MetaModelField> {
-        let data = &self.data;
-
-        let fields = match data {
-            darling::ast::Data::Struct(fields) => fields,
-            _ => abort!(self.ident.span(), "Model must be a struct"),
-        };
-
-        fields.iter().collect()
+        return (id_field.vis.clone(), path.clone());
     }
 
     /// Re-creates the struct for the Model that had the attribute #[model(...)] macro on it
@@ -103,10 +86,12 @@ impl MetaModelDerive {
     /// and required derives (Debug, serde::Serialize, serde::Deserialize)
     fn create_model_struct(
         &self,
+        id_vis: &Visibility,
         id_type: &Path,
         args: &MetaModelAttr,
     ) -> proc_macro2::TokenStream {
         let ident = &self.ident;
+        let data = &self.data;
         let vis = &self.vis;
         let mut id_attr = quote! { #[serde(skip)] };
 
@@ -114,7 +99,10 @@ impl MetaModelDerive {
             id_attr = quote! { #[serde(rename = "_id", skip_serializing_if = "musty::prelude::Id::is_none")] };
         }
 
-        let fields = self.get_fields();
+        let fields = match data {
+            darling::ast::Data::Struct(fields) => fields,
+            _ => abort!(ident.span(), "Model must be a struct"),
+        };
 
         let fields = fields
             .iter()
@@ -142,6 +130,7 @@ impl MetaModelDerive {
             }).collect::<Vec<_>>();
 
         let attrs = &self.attrs;
+
         quote! {
             #(
                 #attrs
@@ -149,11 +138,10 @@ impl MetaModelDerive {
             #[derive(Debug, serde::Serialize, serde::Deserialize)]
             #vis struct #ident {
                 #id_attr
-                id: musty::prelude::Id<Self, #id_type>,
+                #id_vis id: musty::prelude::Id<#ident, #id_type>,
                 #(#fields),*
             }
         }
-        .into()
     }
 
     /// Expands the model struct and the `Model` trait implementation for the model struct
@@ -161,12 +149,14 @@ impl MetaModelDerive {
     pub fn expand(self, args: MetaModelAttr) -> proc_macro::TokenStream {
         let ident = &self.ident;
 
-        let model_id_type = self.get_model_id_type();
-        let model_struct = self.create_model_struct(&model_id_type, &args);
+        let (model_id_vis, model_id_type) = self.get_model_id();
+        let model_struct = self.create_model_struct(&model_id_vis, &model_id_type, &args);
 
         let mut model = quote! {
             #[automatically_derived]
-            impl musty::prelude::Model<#model_id_type> for #ident where Self: Sized {
+            impl musty::prelude::Model for #ident where Self: Sized {
+                type Id = #model_id_type;
+
                 fn id(&self) -> &Id<Self, #model_id_type> {
                     &self.id
                 }
