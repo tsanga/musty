@@ -8,7 +8,7 @@ proc-macro = true
 path = "src/lib.rs"
 
 [dependencies]
-syn = "1"
+syn = { version = "1", features = ["full", "parsing"] }
 quote = "1"
 proc-macro2 = "1"
 darling = "0.14.2"

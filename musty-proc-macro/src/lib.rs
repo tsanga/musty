@@ -1,10 +1,12 @@
 use darling::{FromDeriveInput, FromMeta};
+use filter::filter::MetaFilter;
 use model::meta_model::{MetaModelAttr, MetaModelDerive};
 use proc_macro::{self, TokenStream};
 use proc_macro_error::proc_macro_error;
 use syn::{parse_macro_input, AttributeArgs, DeriveInput};
 
 mod model;
+mod filter;
 mod util;
 
 /// The primary macro for deriving/codegening the `Model` and (optionally) `MongoModel` trait implementations and required attributes
@@ -38,4 +40,14 @@ pub fn model(args: TokenStream, stream: TokenStream) -> TokenStream {
         };
 
     meta_model.expand(arg_model)
+}
+
+#[proc_macro_derive(Filter, attributes(filter))]
+pub fn filter(stream: TokenStream) -> TokenStream {
+    let meta_filter = match MetaFilter::from_derive_input(&parse_macro_input!(stream as DeriveInput)) {
+        Ok(m) => m,
+        Err(e) => return TokenStream::from(e.write_errors()),
+    };
+    
+    meta_filter.expand()
 }

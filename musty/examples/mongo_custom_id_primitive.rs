@@ -2,7 +2,7 @@ use mongodb::{options::ClientOptions, Client};
 use bson::doc;
 use musty::prelude::*;
 
-#[model(mongo(collection = "users_id_primitive"))]
+#[model(mongo(collection = "users"))]
 struct User {
     id: u32,
     name: String,

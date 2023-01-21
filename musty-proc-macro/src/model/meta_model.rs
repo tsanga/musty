@@ -3,9 +3,9 @@ use darling::{FromDeriveInput, FromField, FromMeta};
 use proc_macro2::Span;
 use proc_macro_error::abort;
 use quote::quote;
-use syn::{Ident, Path, Type, TypePath, Visibility};
+use syn::{Ident, Path, Type, TypePath, Visibility, Attribute};
 
-use super::mongo_model::{ModelMongoAttrs, MustyMongoFieldAttrs};
+use super::mongo_model::ModelMongoAttrs;
 
 /// Attributes for a model struct:
 /// #[model(mongo(...))]
@@ -17,8 +17,9 @@ pub(crate) struct MetaModelAttr {
 
 /// A field on a model struct
 #[derive(FromField)]
-#[darling(attributes(musty))]
+#[darling(attributes(musty), forward_attrs(filter, cfg, doc, allow))]
 pub(crate) struct MetaModelField {
+    pub(crate) vis: syn::Visibility,
     pub(crate) ident: Option<Ident>,
     pub(crate) ty: syn::Type,
     #[darling(default)]
@@ -29,19 +30,32 @@ pub(crate) struct MetaModelField {
     /// rename a field: #[musty(rename = "new_field_name")]
     #[darling(default)]
     pub(crate) rename: Option<String>,
-    /// mongo-specific attributes on a field:
-    /// #[musty(mongo(...))]
+    /// generate a getter function for a field:
+    /// ```
+    /// #[musty(get)]
+    /// name: String
+    /// ```
+    /// generates:
+    /// `pub async fn get_by_name(db, name) -> Result<Option<Self>>`
     #[darling(default)]
-    pub(crate) mongo: Option<MustyMongoFieldAttrs>,
+    pub(crate) get: Option<MetaModelFieldGetAttrs>,
+    pub(crate) attrs: Vec<Attribute>,
+}
+
+#[derive(Default, FromMeta)]
+pub(crate) struct MetaModelFieldGetAttrs {
+    #[darling(default)]
+    pub(crate) name: Option<String>,
 }
 
 /// The root derive type for a model struct
 #[derive(FromDeriveInput)]
-#[darling(attributes(model), forward_attrs(allow, doc, cfg))]
+#[darling(attributes(model), forward_attrs(allow, doc, cfg, derive))]
 pub(crate) struct MetaModelDerive {
     pub(crate) ident: Ident,
     pub(crate) vis: Visibility,
     pub(crate) data: darling::ast::Data<darling::util::Ignored, MetaModelField>,
+    pub(crate) attrs: Vec<Attribute>,
 }
 
 impl MetaModelDerive {
@@ -73,6 +87,17 @@ impl MetaModelDerive {
         return path.clone();
     }
 
+    pub(crate) fn get_fields(&self) -> Vec<&MetaModelField> {
+        let data = &self.data;
+
+        let fields = match data {
+            darling::ast::Data::Struct(fields) => fields,
+            _ => abort!(self.ident.span(), "Model must be a struct"),
+        };
+
+        fields.iter().collect()
+    }
+
     /// Re-creates the struct for the Model that had the attribute #[model(...)] macro on it
     /// This edits the id type to be `musty::prelude::Id<Self, #id_type>` and adds necessary serde attributes,
     /// and required derives (Debug, serde::Serialize, serde::Deserialize)
@@ -82,7 +107,6 @@ impl MetaModelDerive {
         args: &MetaModelAttr,
     ) -> proc_macro2::TokenStream {
         let ident = &self.ident;
-        let data = &self.data;
         let vis = &self.vis;
         let mut id_attr = quote! { #[serde(skip)] };
 
@@ -90,15 +114,14 @@ impl MetaModelDerive {
             id_attr = quote! { #[serde(rename = "_id", skip_serializing_if = "musty::prelude::Id::is_none")] };
         }
 
-        let fields = match data {
-            darling::ast::Data::Struct(fields) => fields,
-            _ => abort!(ident.span(), "Model must be a struct"),
-        };
+        let fields = self.get_fields();
 
         let fields = fields
             .iter()
             .filter(|field| { !field.id && field.ident != Some(Ident::new("id", Span::call_site())) })
             .map(|field| {
+                let attrs = &field.attrs;
+                let vis = &field.vis;
                 let ident = field.ident.as_ref().unwrap();
                 let ty = &field.ty;
                 let mut field_attr = quote! {};
@@ -111,11 +134,18 @@ impl MetaModelDerive {
                 }
                 quote! {
                     #field_attr
-                    #ident: #ty
+                    #(
+                        #attrs
+                    )*
+                    #vis #ident: #ty
                 }
-            });
+            }).collect::<Vec<_>>();
 
+        let attrs = &self.attrs;
         quote! {
+            #(
+                #attrs
+            )*
             #[derive(Debug, serde::Serialize, serde::Deserialize)]
             #vis struct #ident {
                 #id_attr

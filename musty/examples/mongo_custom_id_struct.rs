@@ -5,7 +5,7 @@ use bson::{doc, Bson};
 use musty::prelude::*;
 use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MyId(pub String);
 
 impl Display for MyId {
