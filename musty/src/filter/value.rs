@@ -1,4 +1,4 @@
-use crate::{prelude::{Filter, ModelFilter, IdGuard, Id}, Model};
+use crate::{prelude::{Filter, ModelFilter, IdGuard, Id}, Model, reference::Ref};
 
 #[derive(Debug, Clone)]
 pub enum FilterValue {
@@ -76,5 +76,23 @@ impl<T: ModelFilter> From<T> for FilterValue {
 impl<M: Model, I: IdGuard> From<Id<M, I>> for FilterValue {
     fn from(id: Id<M, I>) -> Self {
         Self::Id(id.inner.map(|i| i.to_string()))
+    }
+}
+
+impl<M: Model, I: IdGuard> From<&Id<M, I>> for FilterValue {
+    fn from(id: &Id<M, I>) -> Self {
+        Self::Id(id.inner.as_ref().map(|i| i.to_string()))
+    }
+}
+
+impl<M: Model> From<Ref<M>> for FilterValue {
+    fn from(r: Ref<M>) -> Self {
+        r.take_id().into()
+    }
+}
+
+impl<M: Model> From<&Ref<M>> for FilterValue {
+    fn from(r: &Ref<M>) -> Self {
+        r.id().into()
     }
 }

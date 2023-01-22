@@ -11,7 +11,7 @@ struct User {
     address: Address,
 }
 
-#[derive(Debug, Filter, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Filter)]
 struct Address {
     country: String,
     labels: Vec<String>,

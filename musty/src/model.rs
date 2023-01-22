@@ -18,7 +18,7 @@ use async_trait::async_trait;
 #[async_trait]
 pub trait Model
 where
-    Self: Sized + Send + Sync + Serialize + DeserializeOwned + Unpin,
+    Self: Sized + Send + Sync + Serialize + DeserializeOwned + Unpin + Clone,
 {
     type Id: IdGuard;
 

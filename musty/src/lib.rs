@@ -9,6 +9,7 @@ mod error;
 mod id;
 mod model;
 pub mod filter;
+mod reference;
 
 #[cfg(feature = "bson")]
 pub use bson;

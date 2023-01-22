@@ -135,7 +135,7 @@ impl MetaModelDerive {
             #(
                 #attrs
             )*
-            #[derive(Debug, serde::Serialize, serde::Deserialize)]
+            #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
             #vis struct #ident {
                 #id_attr
                 #id_vis id: musty::prelude::Id<#ident, #id_type>,
