@@ -15,6 +15,7 @@ impl Display for MyId {
 }
 
 #[model(mongo(collection = "users_id_struct"))]
+#[derive(Debug)]
 struct User {
     id: MyId,
     name: String,

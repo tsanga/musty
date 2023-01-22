@@ -42,6 +42,7 @@ pub mod prelude {
     pub use crate::id::GeneratedIdGuard;
     pub use crate::id::Id;
     pub use crate::id::IdGuard;
+    pub use crate::reference::Ref;
 
     // Model
     pub use crate::model::Model;

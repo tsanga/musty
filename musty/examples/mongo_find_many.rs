@@ -4,6 +4,7 @@ use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
 
 #[model(mongo(collection = "users_find_many"))]
+#[derive(Debug)]
 struct User {
     id: ObjectId,
     name: String,

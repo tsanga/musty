@@ -5,6 +5,7 @@ use bson::{oid::ObjectId, doc};
 use musty::prelude::*;
 
 #[model(mongo(collection = "users"))] // The `collection = "name"` attribute is optional.  It will default to the name of your struct, converted to table case and plural (in this case: "users")
+#[derive(Debug)]
 struct User {
     id: ObjectId,
     #[musty(mongo(get))] // generates a `User::get_by_name(db, name)` function

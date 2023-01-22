@@ -10,8 +10,8 @@ pub type DefaultType = String;
 pub trait GeneratedIdGuard: IdGuard {}
 
 /// Guards the underlying type in an [`Id`].
-pub trait IdGuard: ToString + Serialize + DeserializeOwned + Clone + Send + Sync + PartialEq {}
-impl<T: ToString + Serialize + DeserializeOwned + Clone + Send + Sync + PartialEq> IdGuard for T {}
+pub trait IdGuard: ToString + Serialize + DeserializeOwned + Clone + Send + Sync + PartialEq + core::fmt::Debug {}
+impl<T: ToString + Serialize + DeserializeOwned + Clone + Send + Sync + PartialEq + core::fmt::Debug> IdGuard for T {}
 
 /// Wrapper struct for a model ID, which holds the model type.
 #[derive(Debug)]

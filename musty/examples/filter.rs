@@ -2,7 +2,7 @@ use musty::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[model(mongo(collection = "users"))]
-#[derive(Filter)]
+#[derive(Debug, Filter)]
 struct User {
     id: u32,
     name: String,
@@ -32,8 +32,3 @@ async fn main() -> musty::Result<()> {
     println!("filter: {:#?}", &filter);
     Ok(())
 }
-
-/*pub enum Ref<T: Model> {
-    Id(Id<T>),
-    Model(T),
-}*/

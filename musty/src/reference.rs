@@ -1,18 +1,21 @@
 use serde::{Serialize, Deserialize};
 
-use crate::{Model, id::Id, prelude::Backend, Result, context::Context};
+use crate::{Model, id::{Id}, prelude::Backend, Result, context::Context};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Ref<M: Model> {
     Id(Id<M, <M as Model>::Id>),
     Model(M),
 }
 
 impl<M: Model> Ref<M> {
-    pub async fn get<B, I>(&self, db: &crate::Musty<B>) -> Result<Option<M>>
+    pub fn new(id: Id<M, <M as Model>::Id>) -> Self {
+        Self::Id(id)
+    }
+
+    pub async fn get<B>(&self, db: &crate::Musty<B>) -> Result<Option<M>>
     where 
         M: Context<<M as Model>::Id, B> + 'static,
-        I: Into<Id<M, <M as Model>::Id>> + Send + Sync,
         B: Backend,
     {
         match self {
@@ -21,10 +24,9 @@ impl<M: Model> Ref<M> {
         }
     }
 
-    pub async fn take<B, I>(self, db: &crate::Musty<B>) -> Result<Option<M>>
+    pub async fn take<B>(self, db: &crate::Musty<B>) -> Result<Option<M>>
     where 
         M: Context<<M as Model>::Id, B> + 'static,
-        I: Into<Id<M, <M as Model>::Id>> + Send + Sync,
         B: Backend,
     {
         match self {

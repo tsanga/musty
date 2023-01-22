@@ -3,6 +3,7 @@ use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
 
 #[model(mongo(collection = "users"))]
+#[derive(Debug)]
 struct User {
     id: u32,
     name: String,
