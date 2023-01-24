@@ -2,7 +2,7 @@ use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
 
 #[model(mongo(collection = "ref_users"))]
-#[derive(Debug, Filter)]
+#[derive(Debug)]
 struct User {
     id: u32,
     name: String,
@@ -10,7 +10,7 @@ struct User {
 }
 
 #[model(mongo(collection = "ref_user_addresses"))]
-#[derive(Debug, Filter)]
+#[derive(Debug)]
 struct Address {
     id: u32,
     street: String,

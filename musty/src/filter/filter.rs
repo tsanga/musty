@@ -3,7 +3,7 @@ use super::{op::{FilterCmpOp, FilterLogicOp}, value::FilterValue};
 
 #[derive(Debug, Clone)]
 pub struct Filter {
-    pub ops: HashMap<FilterLogicOp, Vec<FilterCondition>>,
+    pub ops: HashMap<FilterLogicOp, Filter>,
     pub filters: Vec<FilterCondition>,
     pub children: HashMap<String, Filter>,
 }
@@ -17,20 +17,50 @@ impl Filter {
         }
     }
 
+    pub fn extend(&mut self, filter: Filter) {
+        for op in filter.ops.clone() {
+            self.add_op_filter(op.0, op.1);
+        }
+        for cond in filter.filters.clone() {
+            self.add_condition(cond);
+        }
+        for child in filter.children.clone() {
+            self.add_child(child.0, child.1);
+        }
+    }
+
     pub fn add_condition(&mut self, filter: FilterCondition) {
         self.filters.push(filter);
     }
 
-    pub fn add_op_condition(&mut self, op: FilterLogicOp, condition: FilterCondition) {
-        if let Some(filters) = self.ops.iter_mut().find(|f| f.0 == &op).map(|f| f.1) {
-            filters.push(condition);
+    pub fn get_op_filter(&mut self, op: FilterLogicOp) -> Option<&mut Filter> {
+        self.ops.get_mut(&op)
+    }
+
+    pub fn add_op_filter(&mut self, op: FilterLogicOp, filter: Filter) {
+        if let Some(existing_filter) = self.get_op_filter(op) {
+            existing_filter.extend(filter);
         } else {
-            self.ops.insert(op, vec![condition]);
+            self.ops.insert(op, filter);
+        }
+    }
+
+    pub fn add_op_condition(&mut self, op: FilterLogicOp, condition: FilterCondition) {
+        if let Some(filter) = self.get_op_filter(op) {
+            filter.add_condition(condition);
+        } else {
+            let mut filter = Filter::new();
+            filter.add_condition(condition);
+            self.ops.insert(op, filter);
         }
     }
 
     pub fn add_child(&mut self, name: String, filter: Filter) {
-        self.children.insert(name, filter);
+        if let Some(child) = self.children.get_mut(&name) {
+            child.extend(filter);
+        } else {
+            self.children.insert(name, filter);
+        }
     }
 }
 
@@ -79,17 +109,37 @@ pub trait ModelFilter: Sized + Clone {
         self.get_filter_mut().add_child(name.into(), child_model_filter.get_filter().clone());
     }
 
+    fn any<'f, Func>(&'f mut self, func: Func) -> &'f mut Self
+    where
+        Func: FnOnce(&mut Self) -> &mut Self,
+    {
+        let mut filter = Self::new();
+        func(&mut filter);
+        self.get_filter_mut().add_op_filter(FilterLogicOp::Any, filter.get_filter().clone());
+        self
+    }
+
+    fn all<'f, Func>(&'f mut self, func: Func) -> &'f mut Self
+    where
+        Func: FnOnce(&mut Self) -> &mut Self,
+    {
+        let mut filter = Self::new();
+        func(&mut filter);
+        self.get_filter_mut().add_op_filter(FilterLogicOp::All, filter.get_filter().clone());
+        self
+    }
+
     fn build(&self) -> Filter {
         self.get_filter().clone()
     }
 
-    // TODO: add op funcs (any, all, etc)
 }
 
 pub struct ModelFieldFilter<'f, F, T>
 where
     Self: Sized,
     F: ModelFilter,
+    T: Into<FilterValue>,
 {
     field_name: String,
     model_filter: &'f mut F,
@@ -124,24 +174,29 @@ where
         self.condition(value, FilterCmpOp::Ne)
     }
 
-    pub fn gt(self, value: T) -> &'f mut F {
+    pub fn gt(self, value: T) -> &'f mut F
+    where T: std::cmp::PartialOrd {
         self.condition(value, FilterCmpOp::Gt)
     }
 
-    pub fn lt(self, value: T) -> &'f mut F {
+    pub fn lt(self, value: T) -> &'f mut F
+    where T: std::cmp::PartialOrd {
         self.condition(value, FilterCmpOp::Lt)
     }
 
-    pub fn ge(self, value: T) -> &'f mut F {
+    pub fn ge(self, value: T) -> &'f mut F
+    where T: std::cmp::PartialOrd {
         self.condition(value, FilterCmpOp::Ge)
     }
 
-    pub fn le(self, value: T) -> &'f mut F {
+    pub fn le(self, value: T) -> &'f mut F
+    where T: std::cmp::PartialOrd {
         self.condition(value, FilterCmpOp::Le)
     }
 
     pub fn any<Func>(self, func: Func) -> &'f mut F
-    where Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>
+    where 
+        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>
     {
         let mut vec_filter = ModelFieldVecFilter::<T>::new();
         func(&mut vec_filter);
@@ -151,12 +206,31 @@ where
     }
 
     pub fn all<Func>(self, func: Func) -> &'f mut F
-    where Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>
+    where 
+        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>
     {
         let mut vec_filter = ModelFieldVecFilter::<T>::new();
         func(&mut vec_filter);
         let condition = FilterCondition::new(self.field_name.clone(), FilterCmpOp::Eq, vec_filter.items.into());
         self.model_filter.get_filter_mut().add_op_condition(FilterLogicOp::All, condition);
+        self.model_filter
+    }
+}
+
+impl<'f, F, T> ModelFieldFilter<'f, F, Vec<T>>
+where
+    Self: Sized,
+    F: ModelFilter,
+    T: Into<FilterValue>,
+{
+    pub fn contains<Func>(self, func: Func) -> &'f mut F
+    where 
+        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>
+    {
+        let mut vec_filter = ModelFieldVecFilter::<T>::new();
+        func(&mut vec_filter);
+        let condition = FilterCondition::new(self.field_name.clone(), FilterCmpOp::Eq, vec_filter.items.into());
+        self.model_filter.get_filter_mut().add_op_condition(FilterLogicOp::Any, condition);
         self.model_filter
     }
 }
@@ -185,74 +259,3 @@ where
         self
     }
 }
-
-/*
-use musty::prelude::*;
-
-#[model()]
-struct User {
-    id: u32,
-    name: String,
-    #[musty(nested)]
-    auth: Auth,
-}
-
-#[derive(Serialize, Deserialize, Filter)]
-struct Auth {
-    password: String
-}
-
-// macro expansion:
-
-#[derive(Clone)]
-struct UserFilter {
-    filter: MustyFilter
-}
-
-impl ModelFilter for UserFilter {
-    fn new() -> Self {
-        Self { filter: MustyFilter::new() }
-    }
-
-    fn new_nested<T: ModelFilter>(parent: &T, name: &str) -> Self {
-        parent.add_filter(MustyFilter::new_nested(name));
-        Self::new()
-    }
-
-    fn add_filter(&mut self, filter: MustyFilter) {
-        // add filter to self
-    }
-}
-
-impl UserFilter {
-    fn id(&mut self) -> ModelFieldFilter<Self, u32> {
-        ModelFieldFilter::new("id", &self)
-    }
-
-    fn auth(&mut self) -> AuthFilter {
-        AuthFilter::new_nested(self, "auth")
-    }
-}
-
-struct AuthFilter {}
-impl AuthFilter {
-    fn password(&mut self) -> ModelFieldFilter<Self, String> {
-        ModelFieldFilter::new("password", &self)
-    }
-}
-
-impl Filterable for User {
-    type ModelFilter = UserFilter;
-}
-
-impl Filterable for Auth {
-    type ModelFilter = AuthFilter;
-}
-
-async fn test() -> Result<()> {
-    let filter = User::filter()
-        .id().eq(1.into())
-        .auth(|auth| auth.password().eq("password".into()));
-}
-
-*/

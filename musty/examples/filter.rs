@@ -20,15 +20,31 @@ struct Address {
 #[tokio::main]
 async fn main() -> musty::Result<()> {
     let filter = User::filter()
-        .id()
-        .eq(1.into())
-        .address(|address| {
-            address
-                .country()
-                .any(|f| f.entry("USA".to_string()).entry("CA".to_string()))
+        .any(|user| {
+            user.name()
+                .any(|a| a.entry("jonah".to_string()).entry("alex".to_string()))
+                .id()
+                .eq(1.into())
+        })
+        .address(|addr| {
+            addr.country()
+                .any(|country| country.entry("US".to_string()).entry("CA".to_string()))
+                .labels().contains(|f| f.entry("test".to_string()))
         })
         .build();
-
     println!("filter: {:#?}", &filter);
+
+    /*
+    {
+        "$or": [
+            "name": { $or: [ "jonah", "alex" ] },
+            "_id": 1
+        ],
+        "address": {
+            "country": { $or: [ "US", "CA" ] }
+        }
+    }
+    */
+
     Ok(())
 }
