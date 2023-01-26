@@ -30,7 +30,8 @@ async fn main() -> musty::Result<()> {
         .address(|addr| {
             addr.country()
                 .any(|country| country.entry("US".to_string()).entry("CA".to_string()))
-                .labels().contains(|f| f.entry("test".to_string()))
+                .labels()
+                .contains(|f| f.entry("test".to_string()))
         })
         .build();
     println!("filter: {:#?}", &filter);

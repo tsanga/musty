@@ -10,8 +10,22 @@ pub type DefaultType = String;
 pub trait GeneratedIdGuard: IdGuard {}
 
 /// Guards the underlying type in an [`Id`].
-pub trait IdGuard: ToString + Serialize + DeserializeOwned + Clone + Send + Sync + PartialEq + core::fmt::Debug {}
-impl<T: ToString + Serialize + DeserializeOwned + Clone + Send + Sync + PartialEq + core::fmt::Debug> IdGuard for T {}
+pub trait IdGuard:
+    ToString + Serialize + DeserializeOwned + Clone + Send + Sync + PartialEq + core::fmt::Debug
+{
+}
+impl<
+        T: ToString
+            + Serialize
+            + DeserializeOwned
+            + Clone
+            + Send
+            + Sync
+            + PartialEq
+            + core::fmt::Debug,
+    > IdGuard for T
+{
+}
 
 /// Wrapper struct for a model ID, which holds the model type.
 #[derive(Debug)]
@@ -21,7 +35,11 @@ pub struct Id<M: Model, I: IdGuard = <M as Model>::Id> {
     _marker: PhantomData<M>,
 }
 
-impl<M, I> PartialEq for Id<M, I> where M: Model, I: IdGuard {
+impl<M, I> PartialEq for Id<M, I>
+where
+    M: Model,
+    I: IdGuard,
+{
     fn eq(&self, other: &Self) -> bool {
         self.inner == other.inner
     }
@@ -110,11 +128,15 @@ impl<'de, M: Model, I: IdGuard> Deserialize<'de> for Id<M, I> {
 mod graphql {
     use async_graphql::*;
 
-    use crate::Model;
     use super::{Id, IdGuard};
+    use crate::Model;
 
     #[Scalar]
-    impl<M, I> ScalarType for Id<M, I> where M: Model, I: IdGuard {
+    impl<M, I> ScalarType for Id<M, I>
+    where
+        M: Model,
+        I: IdGuard,
+    {
         fn parse(value: Value) -> InputValueResult<Self> {
             Ok(async_graphql::from_value(value)?)
         }
@@ -179,7 +201,7 @@ mod bson {
     impl<M, I> TryFrom<&Id<M, I>> for Bson
     where
         I: IdGuard,
-        M: Model
+        M: Model,
     {
         type Error = MustyError;
 

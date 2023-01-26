@@ -1,5 +1,8 @@
+use super::{
+    op::{FilterCmpOp, FilterLogicOp},
+    value::FilterValue,
+};
 use std::collections::HashMap;
-use super::{op::{FilterCmpOp, FilterLogicOp}, value::FilterValue};
 
 #[derive(Debug, Clone)]
 pub struct Filter {
@@ -73,15 +76,14 @@ pub struct FilterCondition {
 
 impl FilterCondition {
     pub fn new(key: String, op: FilterCmpOp, value: FilterValue) -> Self {
-        Self {
-            key,
-            op,
-            value,
-        }
+        Self { key, op, value }
     }
 }
 
-pub trait Filterable where Self: Sized {
+pub trait Filterable
+where
+    Self: Sized,
+{
     type ModelFilter: ModelFilter;
     fn filter() -> Self::ModelFilter {
         <Self::ModelFilter as ModelFilter>::new()
@@ -95,7 +97,10 @@ pub trait ModelFilter: Sized + Clone {
 
     fn get_filter_mut(&mut self) -> &mut Filter;
 
-    fn field<T: Into<FilterValue>>(&mut self, name: impl Into<String>) -> ModelFieldFilter<Self, T> {
+    fn field<T: Into<FilterValue>>(
+        &mut self,
+        name: impl Into<String>,
+    ) -> ModelFieldFilter<Self, T> {
         ModelFieldFilter::new(name, self)
     }
 
@@ -106,7 +111,8 @@ pub trait ModelFilter: Sized + Clone {
     {
         let mut child_model_filter = C::new(); // where C is child
         func(&mut child_model_filter);
-        self.get_filter_mut().add_child(name.into(), child_model_filter.get_filter().clone());
+        self.get_filter_mut()
+            .add_child(name.into(), child_model_filter.get_filter().clone());
     }
 
     fn any<'f, Func>(&'f mut self, func: Func) -> &'f mut Self
@@ -115,7 +121,8 @@ pub trait ModelFilter: Sized + Clone {
     {
         let mut filter = Self::new();
         func(&mut filter);
-        self.get_filter_mut().add_op_filter(FilterLogicOp::Any, filter.get_filter().clone());
+        self.get_filter_mut()
+            .add_op_filter(FilterLogicOp::Any, filter.get_filter().clone());
         self
     }
 
@@ -125,14 +132,14 @@ pub trait ModelFilter: Sized + Clone {
     {
         let mut filter = Self::new();
         func(&mut filter);
-        self.get_filter_mut().add_op_filter(FilterLogicOp::All, filter.get_filter().clone());
+        self.get_filter_mut()
+            .add_op_filter(FilterLogicOp::All, filter.get_filter().clone());
         self
     }
 
     fn build(&self) -> Filter {
         self.get_filter().clone()
     }
-
 }
 
 pub struct ModelFieldFilter<'f, F, T>
@@ -175,44 +182,64 @@ where
     }
 
     pub fn gt(self, value: T) -> &'f mut F
-    where T: std::cmp::PartialOrd {
+    where
+        T: std::cmp::PartialOrd,
+    {
         self.condition(value, FilterCmpOp::Gt)
     }
 
     pub fn lt(self, value: T) -> &'f mut F
-    where T: std::cmp::PartialOrd {
+    where
+        T: std::cmp::PartialOrd,
+    {
         self.condition(value, FilterCmpOp::Lt)
     }
 
     pub fn ge(self, value: T) -> &'f mut F
-    where T: std::cmp::PartialOrd {
+    where
+        T: std::cmp::PartialOrd,
+    {
         self.condition(value, FilterCmpOp::Ge)
     }
 
     pub fn le(self, value: T) -> &'f mut F
-    where T: std::cmp::PartialOrd {
+    where
+        T: std::cmp::PartialOrd,
+    {
         self.condition(value, FilterCmpOp::Le)
     }
 
     pub fn any<Func>(self, func: Func) -> &'f mut F
-    where 
-        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>
+    where
+        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>,
     {
         let mut vec_filter = ModelFieldVecFilter::<T>::new();
         func(&mut vec_filter);
-        let condition = FilterCondition::new(self.field_name.clone(), FilterCmpOp::Eq, vec_filter.items.into());
-        self.model_filter.get_filter_mut().add_op_condition(FilterLogicOp::Any, condition);
+        let condition = FilterCondition::new(
+            self.field_name.clone(),
+            FilterCmpOp::Eq,
+            vec_filter.items.into(),
+        );
+        self.model_filter
+            .get_filter_mut()
+            .add_op_condition(FilterLogicOp::Any, condition);
         self.model_filter
     }
 
     pub fn all<Func>(self, func: Func) -> &'f mut F
-    where 
-        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>
+    where
+        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>,
     {
         let mut vec_filter = ModelFieldVecFilter::<T>::new();
         func(&mut vec_filter);
-        let condition = FilterCondition::new(self.field_name.clone(), FilterCmpOp::Eq, vec_filter.items.into());
-        self.model_filter.get_filter_mut().add_op_condition(FilterLogicOp::All, condition);
+        let condition = FilterCondition::new(
+            self.field_name.clone(),
+            FilterCmpOp::Eq,
+            vec_filter.items.into(),
+        );
+        self.model_filter
+            .get_filter_mut()
+            .add_op_condition(FilterLogicOp::All, condition);
         self.model_filter
     }
 }
@@ -224,13 +251,19 @@ where
     T: Into<FilterValue>,
 {
     pub fn contains<Func>(self, func: Func) -> &'f mut F
-    where 
-        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>
+    where
+        Func: FnOnce(&mut ModelFieldVecFilter<T>) -> &mut ModelFieldVecFilter<T>,
     {
         let mut vec_filter = ModelFieldVecFilter::<T>::new();
         func(&mut vec_filter);
-        let condition = FilterCondition::new(self.field_name.clone(), FilterCmpOp::Eq, vec_filter.items.into());
-        self.model_filter.get_filter_mut().add_op_condition(FilterLogicOp::Any, condition);
+        let condition = FilterCondition::new(
+            self.field_name.clone(),
+            FilterCmpOp::Eq,
+            vec_filter.items.into(),
+        );
+        self.model_filter
+            .get_filter_mut()
+            .add_op_condition(FilterLogicOp::Any, condition);
         self.model_filter
     }
 }

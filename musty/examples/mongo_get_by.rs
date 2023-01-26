@@ -1,9 +1,9 @@
 #![allow(unused_variables)]
 
+use bson::{doc, oid::ObjectId};
 use mongodb::{options::ClientOptions, Client};
-use bson::{oid::ObjectId, doc};
 use musty::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Model)]
 #[musty(mongo(collection = "users"))] // The `collection = "name"` attribute is optional.  It will default to the name of your struct, converted to table case and plural (in this case: "users")
@@ -23,7 +23,11 @@ pub async fn main() -> musty::Result<()> {
     let db = Musty::new(client.database("musty"));
 
     // Insert a user into the collection
-    let mut user = User { id: ObjectId::new().into(), name: String::from("jonah"), email: String::from("jonah@tsanga.net") };
+    let mut user = User {
+        id: ObjectId::new().into(),
+        name: String::from("jonah"),
+        email: String::from("jonah@tsanga.net"),
+    };
     user.save(&db).await?;
 
     // Get the user from the collection by name, using the generated method

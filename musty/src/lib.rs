@@ -6,9 +6,9 @@ mod context;
 mod cursor;
 mod db;
 mod error;
+pub mod filter;
 mod id;
 mod model;
-pub mod filter;
 mod reference;
 
 #[cfg(feature = "bson")]
@@ -45,16 +45,16 @@ pub mod prelude {
     pub use crate::reference::Ref;
 
     // Model
-    pub use crate::model::Model;
     #[cfg(feature = "mongodb")]
     #[cfg_attr(docsrs, doc(cfg(feature = "mongodb")))]
     pub use crate::backend::MongoModel;
+    pub use crate::model::Model;
 
     // Filter
     pub use crate::filter::*;
 
     // Macros
-    pub use musty_proc_macro::*;
     #[doc(hidden)]
     pub use async_trait::async_trait;
+    pub use musty_proc_macro::*;
 }

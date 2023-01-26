@@ -267,20 +267,14 @@ where
     cursor: mongodb::Cursor<M>,
 }
 
-impl<M> Unpin for MongoCursor<M>
-where
-    M: Model,
-{
-}
+impl<M> Unpin for MongoCursor<M> where M: Model {}
 
 impl<M> MongoCursor<M>
 where
     M: Model,
 {
     pub fn new(cursor: mongodb::Cursor<M>) -> Self {
-        Self {
-            cursor,
-        }
+        Self { cursor }
     }
 }
 

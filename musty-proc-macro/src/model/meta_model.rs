@@ -1,12 +1,12 @@
 use super::mongo_model::{ModelMongoAttrs, MustyMongoFieldAttrs};
 use darling::{FromDeriveInput, FromField, FromMeta};
 use proc_macro_error::abort;
-use quote::{quote, format_ident};
+use quote::{format_ident, quote};
 use syn::{spanned::Spanned, Attribute, Ident, Type, TypePath, Visibility};
 
 #[derive(Default, FromMeta)]
 #[darling(default)]
-pub(crate) struct SerdeFieldAttr(String);
+struct SerdeFieldAttr(String);
 
 /// A field on a model struct
 #[derive(FromField)]
@@ -29,10 +29,11 @@ pub(crate) struct MetaModelField {
 }
 
 impl MetaModelField {
-    pub(crate) fn is_id(&self) -> bool {
+    fn is_id(&self) -> bool {
         self.id || self.ident.as_ref().unwrap().to_string() == "id"
     }
-    pub(crate) fn validate_id_field(&self, meta_model: &MetaModelDerive) {
+
+    fn validate_id_field(&self, meta_model: &MetaModelDerive) {
         let ty = &self.ty;
         let path = match ty {
             Type::Path(TypePath { path, .. }) => path,
@@ -63,7 +64,7 @@ impl MetaModelField {
         self.validate_serde_id_attrs(meta_model.mongo.is_some());
     }
 
-    pub(crate) fn get_id_type(&self) -> Ident {
+    fn get_id_type(&self) -> Ident {
         let ty = &self.ty;
         let path = match ty {
             Type::Path(TypePath { path, .. }) => path,
@@ -149,7 +150,7 @@ impl MetaModelField {
         }
     }
 
-    pub fn get_field_name(&self) -> Ident {
+    fn get_field_name(&self) -> Ident {
         if let Some(rename) = self.rename.as_ref() {
             Ident::new(rename, self.ident.as_ref().unwrap().span())
         } else {
@@ -175,7 +176,7 @@ pub(crate) struct MetaModelDerive {
 
 impl MetaModelDerive {
     /// Get the type of the `id` field (or field with attribute #[musty(id)]) on the model struct
-    pub(crate) fn get_model_id(&self) -> &MetaModelField {
+    fn get_model_id(&self) -> &MetaModelField {
         let ident = &self.ident;
         let data = &self.data;
 
@@ -197,7 +198,7 @@ impl MetaModelDerive {
         id_field
     }
 
-    pub(crate) fn get_fields(&self) -> Vec<&MetaModelField> {
+    fn get_fields(&self) -> Vec<&MetaModelField> {
         let data = &self.data;
 
         let fields = match data {
@@ -237,19 +238,21 @@ impl MetaModelDerive {
                     self.child::<#child_filter_ident, Func>(#field_name, func);
                     self
                 }
-            }
+            };
         } else {
             let ty = if field.is_id() {
                 let model_ident = &self.ident;
                 let id_ty = field.get_id_type();
                 quote! { musty::prelude::Id<#model_ident, #id_ty> }
-            } else { quote! { #ty } };
+            } else {
+                quote! { #ty }
+            };
 
             return quote! {
                 #vis fn #ident(&mut self) -> musty::prelude::ModelFieldFilter<Self, #ty> {
                     self.field::<#ty>(#field_name)
                 }
-            }
+            };
         }
     }
 
@@ -258,7 +261,10 @@ impl MetaModelDerive {
         let vis = &self.vis;
         let filter_struct_ident = self.get_filter_struct_ident();
         let fields = self.get_fields();
-        let functions = fields.iter().map(|f| Self::expand_filter_struct_function(&self, f)).collect::<Vec<_>>();
+        let functions = fields
+            .iter()
+            .map(|f| Self::expand_filter_struct_function(&self, f))
+            .collect::<Vec<_>>();
 
         quote! {
             #(

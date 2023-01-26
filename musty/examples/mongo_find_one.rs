@@ -3,7 +3,7 @@
 use bson::{doc, oid::ObjectId};
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Model)]
 #[musty(mongo(collection = "users"))] // The `collection = "name"` attribute is optional.  It will default to the name of your struct, converted to table case and plural (in this case: "users")

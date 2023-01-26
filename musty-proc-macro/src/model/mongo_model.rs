@@ -1,16 +1,15 @@
-use darling::FromMeta;
-use quote::{quote, format_ident};
-use syn::Ident;
-use crate::util::string::{ToPlural, ToTableCase};
 use super::meta_model::MetaModelDerive;
+use crate::util::string::{ToPlural, ToTableCase};
+use darling::FromMeta;
 use proc_macro_error::abort;
+use quote::{format_ident, quote};
+use syn::Ident;
 
 #[derive(Default, FromMeta)]
 #[darling(default)]
 pub(crate) struct MustyMongoFieldAttrs {
     pub(crate) get: bool,
 }
-
 
 /// MongoDB-specific attributes for a model struct:
 /// #[model(mongo(collection = "users"))]
@@ -88,6 +87,6 @@ pub(crate) fn expand_mongo_fields_impl(meta: &MetaModelDerive) -> proc_macro2::T
             }
         }
     } else {
-        quote!{ }
+        quote! {}
     }
 }

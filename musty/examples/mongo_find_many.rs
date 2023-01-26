@@ -2,7 +2,7 @@ use bson::{doc, oid::ObjectId};
 use futures::StreamExt;
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Model)]
 #[musty(mongo(collection = "users_find_many"))]

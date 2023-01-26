@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::{Model, id::{Id}, prelude::Backend, Result, context::Context};
+use crate::{context::Context, id::Id, prelude::Backend, Model, Result};
 
 #[derive(Debug, Clone)]
 pub enum Ref<M: Model> {
@@ -14,7 +14,7 @@ impl<M: Model> Ref<M> {
     }
 
     pub async fn get<B>(&self, db: &crate::Musty<B>) -> Result<Option<M>>
-    where 
+    where
         M: Context<<M as Model>::Id, B> + 'static,
         B: Backend,
     {
@@ -25,7 +25,7 @@ impl<M: Model> Ref<M> {
     }
 
     pub async fn take<B>(self, db: &crate::Musty<B>) -> Result<Option<M>>
-    where 
+    where
         M: Context<<M as Model>::Id, B> + 'static,
         B: Backend,
     {

@@ -1,4 +1,8 @@
-use crate::{prelude::{Filter, ModelFilter, IdGuard, Id}, Model, reference::Ref};
+use crate::{
+    prelude::{Filter, Id, IdGuard, ModelFilter},
+    reference::Ref,
+    Model,
+};
 
 #[derive(Debug, Clone)]
 pub enum FilterValue {

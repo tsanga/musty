@@ -8,7 +8,7 @@ mod model;
 mod util;
 
 /// Reconstructs model struct and derives `Model` (and database-specific model traits).
-/// 
+///
 /// Usage:
 /// ```
 /// use musty::prelude::*;
@@ -19,7 +19,7 @@ mod util;
 ///     name: String
 /// }
 /// ```
-/// 
+///
 /// this derives `serde::Serialize`, `serde::Deserialize`, `Debug`, and adds the necessary serde attributes to the struct and id field.
 /// the id field is also changed to be of type `musty::prelude::Id<Self, I>`, where `I` is the type of your `id` field (in this case: `ObjectId`)
 #[proc_macro_derive(Model, attributes(musty))]

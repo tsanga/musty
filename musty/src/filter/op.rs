@@ -13,4 +13,3 @@ pub enum FilterLogicOp {
     All, // $and or "all" -> all conditions are true (&&)
     Any, // $or or "any" -> any condition is true (||)
 }
-

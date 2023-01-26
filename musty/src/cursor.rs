@@ -1,6 +1,6 @@
 use futures::Stream;
 
-use crate::{prelude::Model};
+use crate::prelude::Model;
 
 /// A simple wrapper for the cursor for musty models.
 /// Used when finding multiple models

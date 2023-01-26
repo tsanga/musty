@@ -1,6 +1,6 @@
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Model)]
 #[musty(mongo(collection = "ref_users"))]
@@ -23,7 +23,10 @@ struct Address {
 
 #[tokio::main]
 async fn main() -> musty::Result<()> {
-    let db = Musty::new(Client::with_options(ClientOptions::parse("mongodb://localhost:27017").await?)?.database("musty"));
+    let db = Musty::new(
+        Client::with_options(ClientOptions::parse("mongodb://localhost:27017").await?)?
+            .database("musty"),
+    );
 
     // Insert an address into the collection
     let mut address = Address {
@@ -47,7 +50,7 @@ async fn main() -> musty::Result<()> {
     println!("User: {:#?}", user);
 
     // Get the user's address by the `address` Ref in the user object
-    // If the address was populated when the User was queried, the Ref<Address> will be Ref::Model(address), 
+    // If the address was populated when the User was queried, the Ref<Address> will be Ref::Model(address),
     // and will not make a database call
     let address = user.address.get(&db).await?.expect("Address not found");
     println!("Address: {:#?}", address);

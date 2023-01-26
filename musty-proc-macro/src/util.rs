@@ -1,5 +1,5 @@
 pub(crate) mod string {
-    /// convert string to table case. i.e "MyUser" -> "my_user" 
+    /// convert string to table case. i.e "MyUser" -> "my_user"
     pub trait ToTableCase {
         fn to_table_case(self) -> String;
     }
