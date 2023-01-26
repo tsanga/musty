@@ -3,11 +3,13 @@
 use bson::{doc, oid::ObjectId};
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
+use serde::{Serialize, Deserialize};
 
-#[model(mongo(collection = "users"))] // The `collection = "name"` attribute is optional.  It will default to the name of your struct, converted to table case and plural (in this case: "users")
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, Model)]
+#[musty(mongo(collection = "users"))] // The `collection = "name"` attribute is optional.  It will default to the name of your struct, converted to table case and plural (in this case: "users")
 struct User {
-    id: ObjectId,
+    #[serde(rename = "_id", skip_serializing_if = "Id::is_none")]
+    id: Id<Self, ObjectId>,
     #[musty(mongo(get))] // generates a `User::get_by_name(db, name)` method
     name: String,
 }

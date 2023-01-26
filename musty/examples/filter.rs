@@ -1,13 +1,14 @@
 use musty::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[model(mongo(collection = "users"))]
-#[derive(Debug, Filter)]
+#[derive(Debug, Clone, Serialize, Deserialize, Model)]
+#[musty(mongo(collection = "users"))]
 struct User {
-    id: u32,
+    #[serde(rename = "_id", skip_serializing_if = "Id::is_none")]
+    id: Id<Self, u32>,
     name: String,
     aliases: Vec<String>,
-    #[filter(child)]
+    #[musty(child)]
     address: Address,
 }
 

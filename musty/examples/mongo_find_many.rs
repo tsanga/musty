@@ -2,11 +2,13 @@ use bson::{doc, oid::ObjectId};
 use futures::StreamExt;
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
+use serde::{Serialize, Deserialize};
 
-#[model(mongo(collection = "users_find_many"))]
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, Model)]
+#[musty(mongo(collection = "users_find_many"))]
 struct User {
-    id: ObjectId,
+    #[serde(rename = "_id", skip_serializing_if = "Id::is_none")]
+    id: Id<Self, ObjectId>,
     name: String,
 }
 

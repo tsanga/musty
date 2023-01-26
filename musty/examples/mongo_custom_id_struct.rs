@@ -14,10 +14,11 @@ impl Display for MyId {
     }
 }
 
-#[model(mongo(collection = "users_id_struct"))]
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, Model)]
+#[musty(mongo(collection = "users_id_struct"))]
 struct User {
-    id: MyId,
+    #[serde(rename = "_id", skip_serializing_if = "Id::is_none")]
+    id: Id<Self, MyId>,
     name: String,
 }
 

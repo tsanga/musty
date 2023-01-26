@@ -1,11 +1,13 @@
 use bson::doc;
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
+use serde::{Serialize, Deserialize};
 
-#[model(mongo(collection = "users"))]
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, Model)]
+#[musty(mongo(collection = "users"))]
 struct User {
-    id: u32,
+    #[serde(rename = "_id", skip_serializing_if = "Id::is_none")]
+    id: Id<Self, u32>,
     name: String,
 }
 

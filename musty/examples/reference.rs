@@ -1,18 +1,21 @@
 use mongodb::{options::ClientOptions, Client};
 use musty::prelude::*;
+use serde::{Serialize, Deserialize};
 
-#[model(mongo(collection = "ref_users"))]
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, Model)]
+#[musty(mongo(collection = "ref_users"))]
 struct User {
-    id: u32,
+    #[serde(rename = "_id", skip_serializing_if = "Id::is_none")]
+    id: Id<Self, u32>,
     name: String,
     address: Ref<Address>,
 }
 
-#[model(mongo(collection = "ref_user_addresses"))]
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, Model)]
+#[musty(mongo(collection = "user_addreses"))]
 struct Address {
-    id: u32,
+    #[serde(rename = "_id", skip_serializing_if = "Id::is_none")]
+    id: Id<Self, u32>,
     street: String,
     city: String,
     country: String,

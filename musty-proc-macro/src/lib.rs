@@ -1,12 +1,10 @@
-use darling::{FromDeriveInput, FromMeta};
-use filter::filter::MetaFilter;
-use model::meta_model::{MetaModelAttr, MetaModelDerive};
+use darling::FromDeriveInput;
+use model::meta_model::MetaModelDerive;
 use proc_macro::{self, TokenStream};
 use proc_macro_error::proc_macro_error;
-use syn::{parse_macro_input, AttributeArgs, DeriveInput};
+use syn::{parse_macro_input, DeriveInput};
 
 mod model;
-mod filter;
 mod util;
 
 /// Reconstructs model struct and derives `Model` (and database-specific model traits).
@@ -24,29 +22,26 @@ mod util;
 /// 
 /// this derives `serde::Serialize`, `serde::Deserialize`, `Debug`, and adds the necessary serde attributes to the struct and id field.
 /// the id field is also changed to be of type `musty::prelude::Id<Self, I>`, where `I` is the type of your `id` field (in this case: `ObjectId`)
-#[proc_macro_attribute]
+#[proc_macro_derive(Model, attributes(musty))]
 #[proc_macro_error]
-pub fn model(args: TokenStream, stream: TokenStream) -> TokenStream {
-    let arg_model = match MetaModelAttr::from_list(&parse_macro_input!(args as AttributeArgs)) {
-        Ok(m) => m,
-        Err(e) => return TokenStream::from(e.write_errors()),
-    };
-
+pub fn model(stream: TokenStream) -> TokenStream {
     let meta_model =
         match MetaModelDerive::from_derive_input(&parse_macro_input!(stream as DeriveInput)) {
             Ok(m) => m,
             Err(e) => return TokenStream::from(e.write_errors()),
         };
 
-    meta_model.expand(arg_model)
+    meta_model.expand()
 }
 
-#[proc_macro_derive(Filter, attributes(filter))]
+#[proc_macro_derive(Filter, attributes(musty))]
+#[proc_macro_error]
 pub fn filter(stream: TokenStream) -> TokenStream {
-    let meta_filter = match MetaFilter::from_derive_input(&parse_macro_input!(stream as DeriveInput)) {
-        Ok(m) => m,
-        Err(e) => return TokenStream::from(e.write_errors()),
-    };
-    
-    meta_filter.expand()
+    let meta_model =
+        match MetaModelDerive::from_derive_input(&parse_macro_input!(stream as DeriveInput)) {
+            Ok(m) => m,
+            Err(e) => return TokenStream::from(e.write_errors()),
+        };
+
+    meta_model.expand_filter().into()
 }
